@@ -30,6 +30,7 @@
     "@platform/execution-engine-sdk": "workspace:*",
     "@platform/sor-sdk": "workspace:*",
     "@platform/tca-sdk": "workspace:*",
+    "@platform/broker-sdk": "workspace:*",
     "@platform/workflow-sdk": "workspace:*",
     "@tanstack/react-query": "5.64.2",
     "zustand": "5.0.3",

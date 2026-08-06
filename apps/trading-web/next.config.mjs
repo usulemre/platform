@@ -10,6 +10,7 @@ const nextConfig = {
     '@platform/execution-engine-sdk',
     '@platform/sor-sdk',
     '@platform/tca-sdk',
+    '@platform/broker-sdk',
   ],
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },

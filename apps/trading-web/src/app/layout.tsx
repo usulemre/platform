@@ -14,6 +14,7 @@ const NAV: readonly { readonly href: string; readonly label: string }[] = [
   { href: '/execution', label: 'Execution' },
   { href: '/smart-order-router', label: 'Router' },
   { href: '/tca', label: 'TCA' },
+  { href: '/broker-gateway', label: 'Gateway' },
   { href: '/orders/blotter', label: 'Blotter' },
   { href: '/orders/active', label: 'Active' },
   { href: '/orders/completed', label: 'Completed' },

@@ -56,6 +56,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/tca" className="hover:text-foreground">
                 TCA
               </Link>
+              <Link href="/broker-gateway" className="hover:text-foreground">
+                Gateway
+              </Link>
               <Link href="/users" className="hover:text-foreground">
                 Users
               </Link>

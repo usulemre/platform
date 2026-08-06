@@ -13,6 +13,7 @@ const nextConfig = {
     '@platform/execution-engine-sdk',
     '@platform/sor-sdk',
     '@platform/tca-sdk',
+    '@platform/broker-sdk',
   ],
   // ESLint runs as its own pipeline task (`turbo lint`); keep it out of the
   // build critical path. TypeScript errors DO fail the build (strict compile).

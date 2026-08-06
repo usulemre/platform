@@ -32,6 +32,9 @@ importers:
       '@platform/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../packages/broker-sdk
       '@platform/data-sdk':
         specifier: workspace:*
         version: link:../../packages/data-sdk
@@ -411,6 +414,9 @@ importers:
       '@platform/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../packages/broker-sdk
       '@platform/execution-engine-sdk':
         specifier: workspace:*
         version: link:../../packages/execution-engine-sdk
@@ -558,6 +564,25 @@ importers:
       typescript:
         specifier: 5.7.3
         version: 5.7.3
+
+  packages/broker-sdk:
+    dependencies:
+      '@platform/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8(@types/node@22.10.7)(jsdom@25.0.1)
 
   packages/config:
     devDependencies:
@@ -742,6 +767,150 @@ importers:
       '@platform/config':
         specifier: workspace:*
         version: link:../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/providers/alpaca:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../broker-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/providers/binance:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../broker-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/providers/bist:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../broker-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/providers/deribit:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../broker-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/providers/fix:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../broker-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/providers/hyperliquid:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../broker-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/providers/interactive-brokers:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../broker-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/providers/rest:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../broker-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/providers/websocket:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../broker-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../config
       eslint:
         specifier: 8.57.1
         version: 8.57.1
@@ -1017,6 +1186,52 @@ importers:
       '@platform/backtesting-sdk':
         specifier: workspace:*
         version: link:../../packages/backtesting-sdk
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8(@types/node@22.10.7)(jsdom@25.0.1)
+
+  services/broker-gateway-service:
+    dependencies:
+      '@platform/broker-sdk':
+        specifier: workspace:*
+        version: link:../../packages/broker-sdk
+      '@platform/provider-alpaca':
+        specifier: workspace:*
+        version: link:../../packages/providers/alpaca
+      '@platform/provider-binance':
+        specifier: workspace:*
+        version: link:../../packages/providers/binance
+      '@platform/provider-bist':
+        specifier: workspace:*
+        version: link:../../packages/providers/bist
+      '@platform/provider-deribit':
+        specifier: workspace:*
+        version: link:../../packages/providers/deribit
+      '@platform/provider-fix':
+        specifier: workspace:*
+        version: link:../../packages/providers/fix
+      '@platform/provider-hyperliquid':
+        specifier: workspace:*
+        version: link:../../packages/providers/hyperliquid
+      '@platform/provider-interactive-brokers':
+        specifier: workspace:*
+        version: link:../../packages/providers/interactive-brokers
+      '@platform/provider-rest':
+        specifier: workspace:*
+        version: link:../../packages/providers/rest
+      '@platform/provider-websocket':
+        specifier: workspace:*
+        version: link:../../packages/providers/websocket
     devDependencies:
       '@platform/config':
         specifier: workspace:*
