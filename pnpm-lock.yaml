@@ -549,6 +549,25 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  packages/auth-core:
+    dependencies:
+      '@platform/http-client':
+        specifier: workspace:*
+        version: link:../http-client
+    devDependencies:
+      '@platform/config':
+        specifier: workspace:*
+        version: link:../config
+      eslint:
+        specifier: 8.57.1
+        version: 8.57.1
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8(@types/node@22.10.7)(jsdom@25.0.1)
+
   packages/backtesting-sdk:
     dependencies:
       '@platform/types':
