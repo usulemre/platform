@@ -15,7 +15,8 @@ export type HttpErrorKind =
   | 'aborted'
   | 'validation'
   | 'timeout'
-  | 'circuit_open';
+  | 'circuit_open'
+  | 'rate_limited';
 
 /** Base class for every error raised by the HTTP client core. */
 export class HttpError extends Error {
@@ -71,6 +72,24 @@ export class HttpCircuitOpenError extends HttpError {
     this.name = 'HttpCircuitOpenError';
     this.circuit = circuit;
     this.circuitState = circuitState;
+  }
+}
+
+/** The request was rejected by the Rate Limiter Engine (Phase 8.1.5). */
+export class HttpRateLimitError extends HttpError {
+  readonly scope: string;
+  readonly retryAfterMs: number;
+  readonly rateLimitReason: string;
+  constructor(request: HttpRequest, scope: string, reason: string, retryAfterMs: number) {
+    super(
+      'rate_limited',
+      `Rate limited on "${scope}" (${reason}); retry after ${retryAfterMs}ms.`,
+      request,
+    );
+    this.name = 'HttpRateLimitError';
+    this.scope = scope;
+    this.retryAfterMs = retryAfterMs;
+    this.rateLimitReason = reason;
   }
 }
 
