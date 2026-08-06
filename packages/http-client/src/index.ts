@@ -28,3 +28,4 @@ export * from './parser';
 export * from './ports';
 export * from './client';
 export * from './provider-client';
+export * from './middleware';

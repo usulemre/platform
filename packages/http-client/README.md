@@ -40,6 +40,39 @@ ensureSuccess(res);
 console.log(res.body.id, res.context.durationMs);
 ```
 
+## Middleware pipeline (`src/middleware`, Phase 8.1.2)
+
+An extensible, provider-independent request-processing framework layered on the core. Providers compose
+reusable middleware **without modifying the client core**.
+
+- **Contracts**: `Middleware` (unified onion handler) plus hook-style `RequestMiddleware` /
+  `ResponseMiddleware` / `ErrorMiddleware`; `MiddlewareResult` (typed `response`/`error` outcome).
+- **Context**: immutable `MiddlewareContext` (request + attribute bag + timing + abort signal) for
+  deterministic context propagation and cancellation.
+- **Composition**: `MiddlewareRegistry`, fluent `PipelineBuilder`, `defineMiddleware`/`passThrough`/`when`,
+  `MiddlewarePriority` ordering.
+- **Execution**: `PipelineExecutor` / `MiddlewarePipeline` — priority ordering, conditional execution,
+  short-circuit, and error interception (thrown `HttpError`s become `error` results so error middleware
+  can recover them).
+- **Integration**: `MiddlewareHttpClient` extends `BaseHttpClient`; every verb flows through the pipeline.
+
+The ten default middleware (authentication, logging, retry, rate-limit, circuit-breaker, metrics,
+tracing, compression, user-agent, request-id) are **inert placeholders** (transparent pass-throughs) —
+no functionality is implemented yet; later phases replace them in place.
+
+```ts
+import { MiddlewareHttpClient, PipelineBuilder, FetchHttpTransport } from '@platform/http-client';
+
+const pipeline = PipelineBuilder.create()
+  .useRequest({
+    name: 'x-app',
+    processRequest: (ctx) =>
+      ctx.withRequest({ ...ctx.request, headers: ctx.request.headers.set('X-App', 'platform') }),
+  })
+  .build();
+const http = new MiddlewareHttpClient({ transport: new FetchHttpTransport(), pipeline });
+```
+
 ## Scripts
 
 `pnpm --filter @platform/http-client typecheck | lint | test`
