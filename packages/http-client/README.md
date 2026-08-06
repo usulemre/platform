@@ -110,6 +110,39 @@ const pipeline = MiddlewarePipeline.of(
 const http = new MiddlewareHttpClient({ transport: new FetchHttpTransport(), pipeline });
 ```
 
+## Circuit Breaker Engine (`src/circuit-breaker`, Phase 8.1.4)
+
+The canonical, **deterministic** resiliency component that protects the platform from repeatedly
+calling unhealthy providers and recovers automatically when they heal. Time is injected via `clock`.
+
+- **State machine**: `CLOSED → OPEN → HALF_OPEN → CLOSED`, plus `FORCED_OPEN`, `FORCED_CLOSED` and
+  `DISABLED` operator overrides (`CircuitStateMachine`, `describeCircuitState`, `canTransition`).
+- **Sliding window**: `CountSlidingWindow` / `TimeSlidingWindow` behind a `FailureTracker`; a
+  `SuccessTracker` counts half-open trials.
+- **Failure classification** (`classifyForCircuit`): counts network / timeout / 5xx (optionally 429);
+  ignores validation, auth/authorization (4xx client) and business errors.
+- **Decision & recovery**: `HealthEvaluator` (failure threshold / rate + minimum throughput),
+  `RecoveryManager` (recovery timeout → half-open probe), `SuccessTracker` (success threshold → close).
+- **Breaker**: `CircuitBreaker` (`tryAcquire`/`record`/`execute`, manual `reset`, `forceOpen`/`forceClosed`/
+  `disable`/`enable`), `CircuitMetrics`, `CircuitEvents`, `CircuitContext`. Rejections raise
+  `HttpCircuitOpenError`.
+- **Registries & engine**: `CircuitPolicyRegistry`, `CircuitRegistry` (one breaker per provider key),
+  and `CircuitBreakerEngine.middleware()` — a real circuit-breaker `Middleware` (keyed by host) for the
+  pipeline that composes with the Retry & Timeout Engine.
+
+```ts
+import {
+  CircuitBreakerEngine,
+  MiddlewarePipeline,
+  MiddlewareHttpClient,
+  FetchHttpTransport,
+} from '@platform/http-client';
+
+const cb = new CircuitBreakerEngine();
+const pipeline = MiddlewarePipeline.of(cb.middleware());
+const http = new MiddlewareHttpClient({ transport: new FetchHttpTransport(), pipeline });
+```
+
 ## Scripts
 
 `pnpm --filter @platform/http-client typecheck | lint | test | bench`

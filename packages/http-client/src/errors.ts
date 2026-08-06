@@ -14,7 +14,8 @@ export type HttpErrorKind =
   | 'status'
   | 'aborted'
   | 'validation'
-  | 'timeout';
+  | 'timeout'
+  | 'circuit_open';
 
 /** Base class for every error raised by the HTTP client core. */
 export class HttpError extends Error {
@@ -54,6 +55,22 @@ export class HttpTimeoutError extends HttpError {
     super('timeout', `The HTTP request timed out after ${timeoutMs}ms.`, request, cause);
     this.name = 'HttpTimeoutError';
     this.timeoutMs = timeoutMs;
+  }
+}
+
+/** The request was rejected by an open circuit breaker before it was sent (Phase 8.1.4). */
+export class HttpCircuitOpenError extends HttpError {
+  readonly circuit: string;
+  readonly circuitState: string;
+  constructor(request: HttpRequest, circuit: string, circuitState: string) {
+    super(
+      'circuit_open',
+      `Circuit "${circuit}" is ${circuitState}; request short-circuited.`,
+      request,
+    );
+    this.name = 'HttpCircuitOpenError';
+    this.circuit = circuit;
+    this.circuitState = circuitState;
   }
 }
 

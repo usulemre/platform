@@ -27,7 +27,7 @@ export class ConstantBackoff implements BackoffStrategy {
     private readonly delayMs: number,
     private readonly maxDelayMs?: number,
   ) {}
-  delay(): number {
+  delay(_attempt: number, _previousDelayMs: number, _random: Random): number {
     return cap(this.delayMs, this.maxDelayMs);
   }
 }
@@ -40,7 +40,7 @@ export class LinearBackoff implements BackoffStrategy {
     private readonly incrementMs: number = baseMs,
     private readonly maxDelayMs?: number,
   ) {}
-  delay(attempt: number): number {
+  delay(attempt: number, _previousDelayMs: number, _random: Random): number {
     return cap(this.baseMs + this.incrementMs * Math.max(0, attempt - 1), this.maxDelayMs);
   }
 }
@@ -53,7 +53,7 @@ export class ExponentialBackoff implements BackoffStrategy {
     private readonly factor: number = 2,
     private readonly maxDelayMs?: number,
   ) {}
-  delay(attempt: number): number {
+  delay(attempt: number, _previousDelayMs: number, _random: Random): number {
     return cap(this.baseMs * Math.pow(this.factor, Math.max(0, attempt - 1)), this.maxDelayMs);
   }
 }

@@ -30,3 +30,4 @@ export * from './client';
 export * from './provider-client';
 export * from './middleware';
 export * from './retry';
+export * from './circuit-breaker';
