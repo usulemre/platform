@@ -1,0 +1,15 @@
+# storage — the vendor-independent Storage Layer abstractions (Phase 3.2).
+# Standard library + the platform contract kernel only. No database/SQL/object-storage/persistence deps.
+[project]
+name = "platform-storage"
+version = "0.1.0"
+description = "Vendor-independent storage abstractions: repository/object/artifact/dataset/snapshot interfaces."
+requires-python = ">=3.12"
+dependencies = ["platform-contracts"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/platform_storage"]

@@ -1,0 +1,45 @@
+/**
+ * Portfolio Construction Engine DTOs. The canonical shapes are owned by the shared
+ * `@platform/portfolio-sdk` (single source of truth across the service and this UI);
+ * this module re-exports them so both tiers speak the same vocabulary. Inert data
+ * only — no optimization, no weight calculation, no risk computation.
+ */
+export type {
+  ApprovalStatus,
+  ArtifactKind,
+  ConstraintKind,
+  ConstraintStatus,
+  DependencyKind,
+  DependencyStatus,
+  LineageNode,
+  LineageNodeKind,
+  MetadataEntry,
+  MetricDescriptor,
+  MetricKey,
+  OptimizationStatus,
+  Portfolio,
+  PortfolioAllocation,
+  PortfolioApproval,
+  PortfolioArtifact,
+  PortfolioComparison,
+  PortfolioConstraint,
+  PortfolioDefinition,
+  PortfolioDependency,
+  PortfolioFamily,
+  PortfolioHolding,
+  PortfolioLineage,
+  PortfolioMetric,
+  PortfolioOptimizationRequest,
+  PortfolioOwner,
+  PortfolioReview,
+  PortfolioSession,
+  PortfolioSignalSelection,
+  PortfolioSnapshot,
+  PortfolioStage,
+  PortfolioTemplate,
+  PortfolioUniverse,
+  PortfolioValidation,
+  PortfolioVersion,
+  PositionSide,
+  ReviewStatus,
+} from '@platform/portfolio-sdk';

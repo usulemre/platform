@@ -1,0 +1,21 @@
+"""Feature Ownership — the accountable owner value object and ownership-transfer interface."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Protocol
+
+from core_domain.shared import EntityId
+
+
+@dataclass(frozen=True, slots=True)
+class FeatureOwner:
+    """The accountable owner and steward roles for a feature (CP-7, HO-1)."""
+
+    owner_role: str
+    steward_role: str
+
+
+class FeatureOwnershipService(Protocol):
+    """Transfers feature ownership with recorded accountability (CP-7). Interface only."""
+
+    def transfer_ownership(self, feature: EntityId, to_role: str) -> None: ...

@@ -1,0 +1,5 @@
+/* Shared base styles for @platform/ui. Apps import their own globals.css which
+   defines the design-token custom properties consumed by the Tailwind preset. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
