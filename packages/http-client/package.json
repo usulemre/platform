@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
     "test": "vitest run",
+    "bench": "vitest bench --run",
     "clean": "rm -rf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {},

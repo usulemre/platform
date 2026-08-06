@@ -18,7 +18,6 @@ import {
   defineMiddleware,
   isErrorResult,
   isResponseResult,
-  jsonBody,
   passThrough,
   unwrapResult,
   when,

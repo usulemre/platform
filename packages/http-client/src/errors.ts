@@ -13,7 +13,8 @@ export type HttpErrorKind =
   | 'parse'
   | 'status'
   | 'aborted'
-  | 'validation';
+  | 'validation'
+  | 'timeout';
 
 /** Base class for every error raised by the HTTP client core. */
 export class HttpError extends Error {
@@ -43,6 +44,16 @@ export class HttpAbortError extends HttpError {
   constructor(request: HttpRequest, cause?: unknown) {
     super('aborted', 'The HTTP request was aborted.', request, cause);
     this.name = 'HttpAbortError';
+  }
+}
+
+/** The request exceeded its allotted time and was aborted by the Timeout Engine (Phase 8.1.3). */
+export class HttpTimeoutError extends HttpError {
+  readonly timeoutMs: number;
+  constructor(request: HttpRequest, timeoutMs: number, cause?: unknown) {
+    super('timeout', `The HTTP request timed out after ${timeoutMs}ms.`, request, cause);
+    this.name = 'HttpTimeoutError';
+    this.timeoutMs = timeoutMs;
   }
 }
 

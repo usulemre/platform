@@ -73,6 +73,43 @@ const pipeline = PipelineBuilder.create()
 const http = new MiddlewareHttpClient({ transport: new FetchHttpTransport(), pipeline });
 ```
 
+## Retry & Timeout Engine (`src/retry`, Phase 8.1.3)
+
+The canonical, **deterministic** resiliency layer. Every side effect — time, delay, randomness — is
+injected through the `Scheduler` and `Random` seams, so runs are reproducible.
+
+- **Backoff**: `ConstantBackoff`, `LinearBackoff`, `ExponentialBackoff`, `DecorrelatedJitter`, plus
+  full/equal jitter (`withJitter`).
+- **Policies**: `RetryPolicy` (max retries, retryable/non-retryable statuses, network/timeout toggles,
+  custom conditions), `createRetryPolicy`, `DEFAULT_RETRY_POLICY`, `NO_RETRY_POLICY`, `RetryPolicyRegistry`.
+  Retries 429/500/502/503/504, network failures and timeouts; never retries 400/401/403/404, validation
+  or parse errors.
+- **Classification & decision**: `classifyOutcome` + `RetryDecisionEngine` (pure).
+- **Timeout**: `TimeoutPolicy` (request/connection/read + per-request override via `metadata.timeoutMs`),
+  `TimeoutManager` (raises `HttpTimeoutError`, honours cancellation).
+- **Execution**: `RetryExecutor` (attempts, `RetryHistory`, `RetryMetrics`), `RetryContext` propagation.
+- **Facade & integration**: `RetryEngine.middleware()` returns a real retry `Middleware` for the pipeline
+  (replacing the Phase 8.1.2 placeholder).
+
+```ts
+import {
+  RetryEngine,
+  MiddlewarePipeline,
+  MiddlewareHttpClient,
+  FetchHttpTransport,
+  createRetryPolicy,
+} from '@platform/http-client';
+
+const engine = new RetryEngine();
+const pipeline = MiddlewarePipeline.of(
+  engine.middleware({
+    policy: createRetryPolicy({ maxRetries: 3 }),
+    timeoutPolicy: { requestTimeoutMs: 5000 },
+  }),
+);
+const http = new MiddlewareHttpClient({ transport: new FetchHttpTransport(), pipeline });
+```
+
 ## Scripts
 
-`pnpm --filter @platform/http-client typecheck | lint | test`
+`pnpm --filter @platform/http-client typecheck | lint | test | bench`
