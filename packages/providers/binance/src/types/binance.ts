@@ -78,6 +78,10 @@ export interface BinanceSpotBalance {
 export interface BinanceAccountInfo {
   readonly accountType?: string;
   readonly canTrade?: boolean;
+  readonly canWithdraw?: boolean;
+  readonly canDeposit?: boolean;
+  readonly permissions?: readonly string[];
+  readonly updateTime?: number;
   readonly balances: readonly BinanceSpotBalance[];
 }
 

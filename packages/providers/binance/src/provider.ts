@@ -62,6 +62,17 @@ import {
   type OrderReference,
   type ReplaceOrderRequest,
 } from './orders';
+import {
+  BinanceAccountSynchronizer,
+  BinanceAccountService,
+  BinanceBalanceService,
+  BinancePositionService,
+  BinanceRestAccountClient,
+  BinanceRestBalanceClient,
+  BinanceRestPositionClient,
+  AccountSnapshotManager,
+  type AccountEventSource,
+} from './account';
 import { BinanceWebSocketClient } from './ws/websocket-client';
 import type {
   CanonicalOrder,
@@ -102,6 +113,7 @@ interface BrokerRuntime {
   marketData?: BinanceMarketDataSocket;
   authService?: BinanceAuthenticationService;
   orders?: BinanceOrderService;
+  accountSync?: BinanceAccountSynchronizer;
   connected: boolean;
 }
 
@@ -501,6 +513,58 @@ export class BinanceProvider implements BrokerProviderPort {
       });
     }
     return runtime.authService;
+  }
+
+  /**
+   * The Binance Position & Balance Synchronization service for this broker binding (Phase 9.1.6) — the
+   * canonical account-state synchronization layer (initial REST snapshot + incremental user-data events
+   * + reconciliation + snapshot recovery). Lazily created and memoized per broker runtime; it reuses the
+   * resilient REST client (via the account clients), the exchange-info cache for symbol naming, and the
+   * authenticated user data stream (Phase 9.1.4) as its incremental event source. Reads only — no orders.
+   * Call `start()` on the returned synchronizer (and on the user data stream) to begin.
+   */
+  accountSynchronizer(ctx: CapabilityContext): BinanceAccountSynchronizer {
+    const runtime = this.runtime(ctx);
+    if (!runtime.accountSync) {
+      const resolver = {
+        toCanonical: (venueSymbol: string): string => {
+          const info = runtime.exchangeInfo.get(venueSymbol);
+          return info
+            ? `${info.baseAsset.toUpperCase()}-${info.quoteAsset.toUpperCase()}`
+            : venueSymbol.toUpperCase();
+        },
+      };
+      const accountService = new BinanceAccountService({
+        market: runtime.config.market,
+        accountClient: new BinanceRestAccountClient(runtime.rest),
+        balanceService: new BinanceBalanceService(
+          runtime.config.market,
+          new BinanceRestBalanceClient(runtime.rest),
+        ),
+        positionService: new BinancePositionService(
+          runtime.config.market,
+          new BinanceRestPositionClient(runtime.rest),
+          resolver,
+        ),
+        clock: this.clock,
+      });
+      const snapshotManager = new AccountSnapshotManager({
+        service: accountService,
+        clock: this.clock,
+      });
+      const eventSource: AccountEventSource = this.deps.socketFactory
+        ? this.authenticationService(ctx).userDataStream()
+        : { on: () => () => undefined };
+      runtime.accountSync = new BinanceAccountSynchronizer({
+        market: runtime.config.market,
+        brokerId: runtime.config.brokerId,
+        snapshotManager,
+        eventSource,
+        clock: this.clock,
+        scheduler: this.deps.scheduler,
+      });
+    }
+    return runtime.accountSync;
   }
 
   /* ------------------------------ streaming & introspection ------------------------------ */

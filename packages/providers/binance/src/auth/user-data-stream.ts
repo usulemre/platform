@@ -77,6 +77,7 @@ export class UserDataStream {
   private readonly state: AuthenticationStateManager;
   private readonly handlers = new Map<string, Set<(event: AccountEvent) => void>>();
   private readonly anyHandlers = new Set<(event: AccountEvent) => void>();
+  private readonly reconnectHandlers = new Set<() => void>();
   private ws?: AuthenticatedWebSocketClient;
   private wsUnsub: (() => void)[] = [];
   private running = false;
@@ -127,6 +128,16 @@ export class UserDataStream {
   onAny(handler: (event: AccountEvent) => void): () => void {
     this.anyHandlers.add(handler);
     return () => this.anyHandlers.delete(handler);
+  }
+
+  /**
+   * Subscribe to stream (re)connection — fired after the socket reconnects or the session is
+   * re-authenticated with a fresh listen key. Downstream consumers (e.g. the account synchronizer) use
+   * this to reload an authoritative snapshot rather than trusting incremental state across the gap.
+   */
+  onReconnect(handler: () => void): () => void {
+    this.reconnectHandlers.add(handler);
+    return () => this.reconnectHandlers.delete(handler);
   }
 
   /* ------------------------------ lifecycle ------------------------------ */
@@ -201,6 +212,7 @@ export class UserDataStream {
       this.ws.onMessage((message) => this.handleRaw(message)),
       this.ws.on('reconnected', () => {
         this.metrics.onReconnect();
+        this.notifyReconnect();
         if (this.deps.recoverOnReconnect !== false) void this.recover();
       }),
       this.ws.on('error', ({ error }) => this.deps.onError?.(error as unknown as Error)),
@@ -222,10 +234,15 @@ export class UserDataStream {
     try {
       await this.ws!.connect();
       this.state.transition('AUTHENTICATED', 'reauthenticated');
+      this.notifyReconnect();
       if (this.deps.recoverOnReconnect !== false) await this.recover();
     } catch (error) {
       this.fail(error as Error);
     }
+  }
+
+  private notifyReconnect(): void {
+    for (const handler of this.reconnectHandlers) handler();
   }
 
   /* ------------------------------ event handling ------------------------------ */

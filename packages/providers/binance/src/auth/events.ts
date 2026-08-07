@@ -49,6 +49,9 @@ export interface AccountPosition {
   readonly marginType: string;
   readonly isolatedWallet: number;
   readonly positionSide: string;
+  /** Present on a REST position-risk snapshot (not on the ACCOUNT_UPDATE event). */
+  readonly markPrice?: number;
+  readonly leverage?: number;
 }
 
 /** `outboundAccountPosition` (Spot) / `ACCOUNT_UPDATE` (Futures) — an account state change. */

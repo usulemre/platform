@@ -132,6 +132,33 @@ all immutable. Flow: **Trading Platform → Broker Gateway → BinanceProvider �
 Common HTTP Client → Binance API.** Only officially-documented endpoints, params and enums used;
 Spot/Futures differences respected.
 
+## Position & Balance Synchronization (`src/account`, Phase 9.1.6)
+
+The canonical account-state synchronization layer. It retrieves, maintains, reconciles and publishes
+canonical balances, positions, account status and permissions by combining an **initial REST
+snapshot** with **incremental user-data events** (from the Phase 9.1.4 stream), driven by a
+synchronization state machine with **explicit snapshot recovery**. Reached via
+`provider.accountSynchronizer(ctx)`; exposes **only** canonical models and reads only — no orders, no
+trading/portfolio/risk logic. Spot and Futures account models are handled distinctly.
+
+| Component                                                                                                                           | Responsibility                                                                                      |
+| ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `BinanceAccountSynchronizer`                                                                                                        | orchestration: snapshot → subscribe → incremental → reconcile → periodic verify → recover           |
+| `SynchronizationStateMachine`                                                                                                       | `UNINITIALIZED→INITIALIZING→SNAPSHOT_LOADING→SYNCHRONIZING→SYNCHRONIZED→DEGRADED→RECOVERING→FAILED` |
+| `BinanceBalanceSynchronizer` / `BinancePositionSynchronizer`                                                                        | maintained balance/position stores                                                                  |
+| `EventProcessor` + `SequenceValidator`                                                                                              | dedupe + ordering (duplicate/stale detection) before apply                                          |
+| `StateReconciler`                                                                                                                   | snapshot-authoritative reconcile + consistency verification                                         |
+| `AccountSnapshotManager` + `BinanceAccountService`/`BinanceBalanceService`/`BinancePositionService`                                 | REST snapshot retrieval                                                                             |
+| `BinanceAccountClient`/`BinanceBalanceClient`/`BinancePositionClient` (adapters over `BinanceRestClient`)                           | account read ports                                                                                  |
+| `AccountMapper`/`BalanceMapper`/`PositionMapper` + `AccountValidator`/`BalanceValidator`/`PositionValidator` + `AccountErrorMapper` | canonical mapping / validation / errors                                                             |
+| `SyncMetrics`                                                                                                                       | applied/dropped/duplicate/stale/recovery counters + `SyncStatus`                                    |
+
+Canonical models: `Account`, `AccountState`, `AccountBalance`, `Position` (`AccountPosition`),
+`PositionSide`, `MarginState`, `AccountPermission`, `AccountSnapshot`, `SynchronizationState`,
+`SyncStatus` (+ the reused `AccountUpdateEvent`/`BalanceUpdateEvent`/`PositionUpdateEvent`) — all
+immutable. Consistency protections: duplicate/out-of-order/stale events, reconnect and failed
+consistency checks all trigger **explicit snapshot recovery** rather than silently accepting drift.
+
 ## Composition
 
 `providerFactories` are the zero-argument factories the broker-gateway service merges into its
