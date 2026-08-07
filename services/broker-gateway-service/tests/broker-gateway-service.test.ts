@@ -152,15 +152,26 @@ describe('registry, sync, metrics, search (pure)', () => {
   });
 });
 
-describe('provider registry (DI, placeholders)', () => {
-  it('registers all 10 provider ids and every capability op throws (no live transport)', async () => {
+describe('provider registry (DI)', () => {
+  it('registers all 10 provider ids; placeholder adapters still throw (no live transport)', async () => {
     expect(Object.keys(PROVIDER_FACTORIES).sort()).toContain('binance-futures');
     expect(Object.keys(PROVIDER_FACTORIES)).toHaveLength(10);
-    const provider = PROVIDER_FACTORIES['binance']!();
-    expect(provider.supports('SUBMIT_ORDER')).toBe(true);
+    // A still-placeholder provider rejects its capability operations.
+    const placeholder = PROVIDER_FACTORIES['hyperliquid']!();
+    expect(placeholder.supports('SUBMIT_ORDER')).toBe(true);
     await expect(
-      provider.connect({ brokerId: 'x', config: {} as GatewayConfiguration, at: AT }),
+      placeholder.connect({ brokerId: 'x', config: {} as GatewayConfiguration, at: AT }),
     ).rejects.toBeInstanceOf(ProviderNotImplementedError);
+  });
+
+  it('binds a live Binance adapter that declares capabilities and fails closed when unconfigured', async () => {
+    const binance = PROVIDER_FACTORIES['binance']!();
+    expect(binance.descriptor.placeholder).toBe(false);
+    expect(binance.supports('SUBMIT_ORDER')).toBe(true);
+    // An empty/unbound config cannot resolve a Binance market, so connect rejects (fails closed).
+    await expect(
+      binance.connect({ brokerId: 'x', config: {} as GatewayConfiguration, at: AT }),
+    ).rejects.toThrow();
   });
 });
 

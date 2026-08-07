@@ -1,7 +1,46 @@
 # provider-binance
 
-Placeholder broker/venue provider adapter for **Binance & Binance Futures**.
+Production broker/venue provider adapter for **Binance (Spot)** and **Binance Futures** (Phase 9.1).
 
-Declares the provider capability contracts via `@platform/broker-sdk` but implements **no** transport
-— no exchange REST call, no WebSocket protocol, no FIX message. Injected into the broker-gateway
-registry by id; swapping in a concrete adapter requires no gateway change.
+Implements the canonical Broker Gateway capability contract (`BrokerProviderPort` from
+`@platform/broker-sdk`) and a richer canonical trading/market-data surface on top. It is built
+entirely on the shared foundations and is strictly isolated — it depends **only** on the Broker
+Gateway SDK and the common foundations, never on other platform modules, and every venue specific
+(REST paths, request signing, WebSocket protocol, field names, error codes) is confined to this
+package behind the canonical contracts.
+
+## Built on
+
+- **`@platform/http-client`** — REST transport, plus the Retry & Timeout, Circuit Breaker composition.
+- **`@platform/rate-limiter`** — provider-scoped request pacing (Binance weight/minute).
+- **`@platform/auth-core`** — HMAC-SHA256 request signing; secrets resolved **by reference** only.
+- **`@platform/websocket-client`** — ticker / kline / order-book / user-data streams.
+- **`@platform/broker-sdk`** — the capability contract, lifecycle, health computation and descriptors.
+
+## Structure
+
+| Component                                                                     | Responsibility                                                              |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `BinanceProvider`                                                             | `BrokerProviderPort` implementation + canonical trading/market-data surface |
+| `BinanceRestClient`                                                           | typed Spot + Futures REST surface over the resilient HTTP client            |
+| `BinanceWebSocketClient`                                                      | Binance stream conventions over the common WebSocket client                 |
+| `BinanceAuthentication`                                                       | request signing / API-key headers (secrets by reference)                    |
+| `BinanceMapper` (+ symbol/order/trade/balance/position/execution/market-data) | canonical ⇄ Binance translation                                             |
+| `BinanceErrorMapper`                                                          | venue/transport failures → classified `BinanceError` hierarchy              |
+| `BinanceExchangeInfoCache` / `BinanceServerTimeSync`                          | instrument metadata cache / signed-request clock alignment                  |
+| `BinanceCapabilityRegistry` / `BinanceHealthMonitor`                          | declared capabilities / deterministic health                                |
+| `resolveBinanceConfiguration`                                                 | fail-closed config resolution (endpoints, references, tuning)               |
+
+## Isolation & safety
+
+- **No business logic outside the provider boundary.** The adapter only translates and transports.
+- **Secrets by reference.** The API key/secret are resolved through an injected `SecretProvider`;
+  no secret is stored, logged, or serialized. Missing references fail closed.
+- **Deterministic.** Transport, socket factory, clock and scheduler are all injected — the package
+  opens no network and reads no wall-clock ambiently, so it is fully testable.
+
+## Composition
+
+`providerFactories` are the zero-argument factories the broker-gateway service merges into its
+provider registry (unchanged integration seam). Use `createBinanceProvider({ transport,
+socketFactory, secretProvider, clock, ... })` to build a fully-injected adapter.

@@ -1,6 +1,6 @@
 {
   "name": "@platform/provider-binance",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
@@ -12,14 +12,20 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
+    "test": "vitest run",
     "clean": "rm -rf .turbo dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@platform/broker-sdk": "workspace:*"
+    "@platform/auth-core": "workspace:*",
+    "@platform/broker-sdk": "workspace:*",
+    "@platform/http-client": "workspace:*",
+    "@platform/rate-limiter": "workspace:*",
+    "@platform/websocket-client": "workspace:*"
   },
   "devDependencies": {
     "@platform/config": "workspace:*",
     "eslint": "8.57.1",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "2.1.8"
   }
 }
