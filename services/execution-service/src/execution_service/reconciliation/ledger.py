@@ -1,21 +1,19 @@
-"""Position Reconciliation — the append-only position ledger and reconciler (CP-2, OB-1).
+"""Position-ledger reconciliation — the append-only fill ledger and its net-position check (CP-2, OB-1).
 
-The ninth deterministic engine in the platform. Every fill is recorded to an append-only position
-ledger; reconciliation compares the platform's internally-derived net position against an externally
-reported position (the "reality" supplied by an outer adapter) and reports whether they agree within
-a tolerance. A silent divergence between the books and reality is how execution errors compound, so
-reconciliation is a first-class deterministic check.
+Every fill is recorded to an append-only position ledger; ``reconcile`` compares the platform's
+internally-derived *net* position against an externally reported position and reports whether they
+agree within a tolerance. This is the coarse single-instrument check; the multi-dimensional
+expected-vs-reported reconciliation lives in ``execution_service.reconciliation.state``.
 
 Enforced by construction:
 
 * **Append-only (CP-2).** Fills are only appended; the net position is derived, never edited. The
   recorded fills are exposed only as an immutable snapshot.
 * **Reality is supplied, never read (CS-3).** ``reconcile`` takes the externally-reported position
-  as an argument; the engine performs no I/O and reads no wall-clock, so a reconciliation is exactly
+  as an argument; the ledger performs no I/O and reads no wall-clock, so a reconciliation is exactly
   reproducible (DE-2).
 * **Fails closed on divergence.** ``matched`` is true only when ``|internal - reported|`` is within
-  the tolerance; any larger gap is an unreconciled discrepancy that downstream governance must halt
-  on.
+  the tolerance; any larger gap is an unreconciled discrepancy that downstream governance must act on.
 """
 from __future__ import annotations
 
@@ -32,7 +30,7 @@ class ReconciliationError(ExecutionError):
 
 @dataclass(frozen=True, slots=True)
 class ReconciliationResult:
-    """The immutable outcome of a reconciliation (EXP-2)."""
+    """The immutable outcome of a net-position reconciliation (EXP-2)."""
 
     matched: bool
     internal_quantity: float
@@ -41,7 +39,7 @@ class ReconciliationResult:
 
 
 class PositionReconciler:
-    """An append-only position ledger with deterministic reconciliation.
+    """An append-only position ledger with deterministic net-position reconciliation.
 
     Fill quantities are signed (buys positive, sells negative); the net position is their sum.
     """
