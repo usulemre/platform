@@ -54,7 +54,6 @@ export {
   type ResilientHttpClient,
 } from './http/resilience';
 export { BinanceWebSocketClient, type UserDataHandlers } from './ws/websocket-client';
-export { BinanceAuthentication, encodeParams, type BinanceParamValue } from './auth/authentication';
 export { BinanceMapper } from './mappers/mapper';
 export { BinanceSymbolMapper } from './mappers/symbol-mapper';
 export { BinanceOrderMapper } from './mappers/order-mapper';
@@ -88,3 +87,6 @@ export * from './metadata';
 
 // Phase 9.1.3 — WebSocket Market Data Streams (canonical real-time market-data provider).
 export * from './websocket';
+
+// Phase 9.1.4 — Authentication & User Data Streams (authenticated communication layer).
+export * from './auth';

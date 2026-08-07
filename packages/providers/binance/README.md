@@ -81,6 +81,30 @@ Canonical events: `MarketTradeEvent`, `AggregateTradeEvent`, `TickerEvent`, `Boo
 immutable. Reach it from the provider via `provider.marketDataSocket(ctx)` (requires a socket factory).
 Only officially-documented stream names, payload fields and enum values are used.
 
+## Authentication & User Data Streams (`src/auth`, Phase 9.1.4)
+
+The canonical authenticated-communication layer. It securely authenticates (HMAC-SHA256 signing via
+the Authentication Core, secrets by reference), aligns the clock to the venue, manages the listen-key
+lifecycle, maintains an authenticated user data stream, and maps every account event into the
+canonical domain. It signs requests and manages sessions — **no order placement, no trading logic**.
+
+| Component                                                                              | Responsibility                                                                                       |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `BinanceAuthenticationService`                                                         | facade: authenticate (verify creds + sync clock), expose signer + user data stream                   |
+| `RequestSigner`                                                                        | server-aligned HMAC-SHA256 signing (over the reused `BinanceAuthentication`)                         |
+| `ServerTimeSynchronizer` / `ClockSynchronizer`                                         | clock-drift compensation for signed requests                                                         |
+| `ListenKeyManager` / `ListenKeyRefresher`                                              | listen-key create/keep-alive/expiry + automatic 30-min refresh                                       |
+| `UserDataStream`                                                                       | authenticated WS user data stream: canonical events, re-auth on `listenKeyExpired`, session recovery |
+| `AuthenticatedWebSocketClient`                                                         | thin wrapper over the Common WebSocket Client bound to `/ws/<listenKey>`                             |
+| `AuthenticatedRestClient` (+ adapter over `BinanceRestClient`)                         | authenticated REST port: server time, listen-key lifecycle, account snapshot                         |
+| `AuthenticationEventMapper` / `AuthenticationValidator` / `AuthenticationStateManager` | canonical mapping / payload + recvWindow validation / auth state machine                             |
+| `UserDataMetrics` / `UserDataHealthMonitor`                                            | event counters / deterministic health                                                                |
+
+Canonical events: `AccountUpdatedEvent`, `BalanceUpdatedEvent`, `PositionUpdatedEvent`,
+`OrderUpdatedEvent`, `ExecutionReportEvent`, `TradeExecutionEvent`, `ListenKeyExpiredEvent`,
+`AuthenticationStateChangedEvent` — all immutable. Reach it from the provider via
+`provider.authenticationService(ctx)`. Only officially-documented endpoints, payloads and events used.
+
 ## Composition
 
 `providerFactories` are the zero-argument factories the broker-gateway service merges into its

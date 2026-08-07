@@ -29,6 +29,7 @@ import {
 } from '@platform/broker-sdk';
 import {
   FetchHttpTransport,
+  SystemScheduler,
   type Clock,
   type HttpTransport,
   type Random,
@@ -53,6 +54,7 @@ import { BinanceRestClient } from './http/rest-client';
 import { createResilientHttpClient, type ResilientHttpClient } from './http/resilience';
 import { ExchangeMetadataService } from './metadata/service';
 import { BinanceMarketDataSocket } from './websocket/socket';
+import { BinanceAuthenticationService, BinanceAuthenticatedRestClient } from './auth';
 import { BinanceWebSocketClient } from './ws/websocket-client';
 import type {
   CanonicalOrder,
@@ -91,6 +93,7 @@ interface BrokerRuntime {
   readonly health: BinanceHealthMonitor;
   metadata?: ExchangeMetadataService;
   marketData?: BinanceMarketDataSocket;
+  authService?: BinanceAuthenticationService;
   connected: boolean;
 }
 
@@ -427,6 +430,38 @@ export class BinanceProvider implements BrokerProviderPort {
       });
     }
     return runtime.marketData;
+  }
+
+  /**
+   * The Binance Authentication & User Data Streams service for this broker binding (Phase 9.1.4) — the
+   * canonical authenticated-communication layer (request signing, server-time/clock synchronization,
+   * listen-key lifecycle, authenticated user data stream with canonical account events). Lazily created
+   * and memoized per broker runtime; it reuses the provider's signing (`BinanceAuthentication`) and the
+   * resilient REST client (as the authenticated REST source). A socket factory is required only to open
+   * the user data stream. Signs and manages sessions — never places orders.
+   */
+  authenticationService(ctx: CapabilityContext): BinanceAuthenticationService {
+    const runtime = this.runtime(ctx);
+    if (!runtime.authService) {
+      runtime.authService = new BinanceAuthenticationService({
+        config: runtime.config,
+        auth: this.auth,
+        rest: new BinanceAuthenticatedRestClient(runtime.rest),
+        clock: this.clock,
+        scheduler: this.deps.scheduler ?? new SystemScheduler(),
+        random: this.deps.random,
+        resolver: {
+          toCanonical: (venueSymbol) => {
+            const info = runtime.exchangeInfo.get(venueSymbol);
+            return info
+              ? `${info.baseAsset.toUpperCase()}-${info.quoteAsset.toUpperCase()}`
+              : venueSymbol.toUpperCase();
+          },
+        },
+        factory: this.deps.socketFactory,
+      });
+    }
+    return runtime.authService;
   }
 
   /* ------------------------------ streaming & introspection ------------------------------ */
