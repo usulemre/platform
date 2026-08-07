@@ -1,0 +1,16 @@
+# governance-service — the independent Scientific Governance adjudicator.
+# Materialises the governance bounded context (core_domain.governance). Standard library + core
+# domain only; it is deliberately separated from generation to preserve separation of powers (CP-5).
+[project]
+name = "governance-service"
+version = "0.1.0"
+description = "Scientific Governance: the deterministic Pre-Capital Scientific Governance Gate (P2-09)."
+requires-python = ">=3.12"
+dependencies = ["core-domain"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/governance_service"]

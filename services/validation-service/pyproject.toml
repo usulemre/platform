@@ -1,0 +1,17 @@
+# validation-service — the deterministic Validation (Quantitative Engine) adjudicator.
+# Owns the science that decides significance: the Multiple-Testing Budget gate over the immutable
+# Trial Ledger (P2-02, SI-1..SI-3). Standard library + core domain only; it is the ONLY place
+# significance is adjudicated and no LLM is ever in the path (VS-1, AI-2).
+[project]
+name = "validation-service"
+version = "0.1.0"
+description = "Validation: the deterministic Multiple-Testing Budget gate over the Trial Ledger (P2-02)."
+requires-python = ">=3.12"
+dependencies = ["core-domain"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/validation_service"]
