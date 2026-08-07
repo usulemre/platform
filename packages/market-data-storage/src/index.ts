@@ -42,3 +42,6 @@ export * from './health/storage-health-monitor';
 
 // Façade
 export * from './storage';
+
+// Production persistent engine (ClickHouse) + composition-root factory
+export * from './clickhouse';

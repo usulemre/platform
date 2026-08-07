@@ -18,7 +18,8 @@
   "dependencies": {
     "@platform/market-data-ingestion": "workspace:*",
     "@platform/market-data-sdk": "workspace:*",
-    "@platform/types": "workspace:*"
+    "@platform/types": "workspace:*",
+    "@clickhouse/client": "^1.11.0"
   },
   "devDependencies": {
     "@platform/config": "workspace:*",
