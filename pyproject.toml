@@ -83,5 +83,6 @@ research-api = { workspace = true }
 research-service = { workspace = true }
 risk-service = { workspace = true }
 signal-service = { workspace = true }
+trading-orchestration-service = { workspace = true }
 validation-service = { workspace = true }
 workflow-engine = { workspace = true }

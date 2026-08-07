@@ -30,6 +30,7 @@ members = [
     "research-service",
     "risk-service",
     "signal-service",
+    "trading-orchestration-service",
     "validation-service",
     "workflow-engine",
 ]
@@ -651,6 +652,25 @@ dependencies = [
 requires-dist = [
     { name = "core-domain", editable = "packages/core-domain" },
     { name = "platform-validation", editable = "packages/validation" },
+]
+
+[[package]]
+name = "trading-orchestration-service"
+version = "0.1.0"
+source = { editable = "services/trading-orchestration-service" }
+dependencies = [
+    { name = "core-domain" },
+    { name = "execution-service" },
+    { name = "portfolio-service" },
+    { name = "risk-service" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "core-domain", editable = "packages/core-domain" },
+    { name = "execution-service", editable = "services/execution-service" },
+    { name = "portfolio-service", editable = "services/portfolio-service" },
+    { name = "risk-service", editable = "services/risk-service" },
 ]
 
 [[package]]
