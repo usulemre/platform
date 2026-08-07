@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from platform_contracts.common import SchemaVersion
-
 from platform_messaging.event_model import EventCategory
 
 

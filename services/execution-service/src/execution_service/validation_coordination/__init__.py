@@ -9,7 +9,6 @@ from typing import Protocol
 
 from core_domain.execution import ParityReport
 from core_domain.shared import EntityId
-
 from platform_validation.context import ValidationContext
 from platform_validation.report import ValidationReport
 

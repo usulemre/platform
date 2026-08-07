@@ -1,9 +1,0 @@
-# pnpm workspace for the frontend monorepo (Phase 4.0).
-# Only directories that contain a package.json are treated as workspace
-# packages; the pre-existing Python placeholder directories under packages/
-# are silently ignored.
-packages:
-  - "apps/*"
-  - "packages/*"
-  - "packages/providers/*"
-  - "services/*"

@@ -6,8 +6,8 @@ from .errors import NonAsOfRead, SurvivorshipUnsafe, UncertifiedDataExposed, Vin
 from .events import DatasetRegistered, DatasetValidated, VintageRecorded
 from .model import (
     CertificationStatus,
-    Dataset,
     DataQualityReport,
+    Dataset,
     Symbology,
     UniverseSnapshot,
     Vintage,

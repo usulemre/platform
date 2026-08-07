@@ -4,7 +4,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from platform_contracts.common import SchemaVersion
-
 from platform_messaging.metadata import MessageHeader  # reuse the transport-neutral header
 
 

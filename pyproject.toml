@@ -1,0 +1,87 @@
+# Root of the Institutional Quantitative Research Platform (Python).
+#
+# This is a *virtual* uv workspace root (no [project] table): it does not build
+# into a distributable package itself; it only binds the member packages and
+# services under a single resolution + lockfile so their internal dependencies
+# (declared by bare name, e.g. "core-domain") resolve against the local sources
+# instead of PyPI.
+#
+# Layout authority: ARCH §2 (RO-1). Adding a new member MUST go through the
+# amendment/patch procedure, not ad hoc (AR-1).
+
+# Dev tooling shared across the whole workspace. Installed by default on `uv sync`.
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
+
+# Golden-set tests for deterministic engines are constitutionally required (CS-2, VS-1).
+[tool.pytest.ini_options]
+testpaths = ["packages", "services", "tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+# Correctness + hygiene. Deliberately not over-strict on a young skeleton codebase.
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = [
+  "E501",   # long constitutional docstrings/citations are allowed
+  "UP046",  # keep the codebase's established `Generic[T]` idiom, not PEP-695 `class C[T]` (NM-3)
+]
+
+# mypy is applied strictly only to implemented deterministic engines + their tests (DE-2, CS-2);
+# the interface-only skeleton modules are checked leniently until they gain logic.
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+namespace_packages = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "*"
+disallow_untyped_defs = false
+
+[tool.uv.workspace]
+members = ["packages/*", "services/*"]
+# Architectural placeholders that do not yet carry a pyproject.toml. They are
+# planned modules (the Python "deficiency backlog"), not build members yet, so
+# they are excluded until scaffolded. Do NOT delete them — they are the roadmap.
+exclude = [
+  "packages/ai-runtime",
+  "packages/logging",
+  "packages/observability",
+  "packages/shared-types",
+  "packages/utilities",
+  "services/monitoring-service",
+  "services/strategy-service",
+]
+
+# Every internal package is resolved from the workspace, never PyPI.
+[tool.uv.sources]
+admin-api = { workspace = true }
+backtesting-service = { workspace = true }
+core-domain = { workspace = true }
+data-connectors = { workspace = true }
+dataset-service = { workspace = true }
+event-bus = { workspace = true }
+execution-service = { workspace = true }
+experiment-service = { workspace = true }
+feature-service = { workspace = true }
+governance-service = { workspace = true }
+platform-configuration = { workspace = true }
+platform-contracts = { workspace = true }
+platform-messaging = { workspace = true }
+platform-scheduler = { workspace = true }
+platform-security = { workspace = true }
+platform-storage = { workspace = true }
+platform-validation = { workspace = true }
+portfolio-service = { workspace = true }
+research-api = { workspace = true }
+research-service = { workspace = true }
+risk-service = { workspace = true }
+signal-service = { workspace = true }
+validation-service = { workspace = true }
+workflow-engine = { workspace = true }

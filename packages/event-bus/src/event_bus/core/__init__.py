@@ -9,7 +9,6 @@ from dataclasses import dataclass
 
 from core_domain.shared import DomainEvent  # re-export: the canonical transported event
 from platform_contracts.common import CorrelationId
-
 from platform_messaging.event_model import EventCategory
 
 

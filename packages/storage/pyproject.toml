@@ -5,7 +5,7 @@ name = "platform-storage"
 version = "0.1.0"
 description = "Vendor-independent storage abstractions: repository/object/artifact/dataset/snapshot interfaces."
 requires-python = ">=3.12"
-dependencies = ["platform-contracts"]
+dependencies = ["platform-contracts", "core-domain"]
 
 [build-system]
 requires = ["hatchling"]

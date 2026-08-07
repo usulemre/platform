@@ -3,7 +3,11 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from platform_messaging.dead_letter import DeadLetterPolicy, DeadLetterQueue, DeadLetterRecord  # reuse
+from platform_messaging.dead_letter import (  # reuse
+    DeadLetterPolicy,
+    DeadLetterQueue,
+    DeadLetterRecord,
+)
 
 
 class DeadLetterRouter(Protocol):

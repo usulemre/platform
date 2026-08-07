@@ -5,7 +5,7 @@ from typing import Protocol
 
 from core_domain.shared import AsOf, EntityId
 
-from .model import Dataset, DataQualityReport, Vintage
+from .model import DataQualityReport, Dataset, Vintage
 
 
 class DatasetRepository(Protocol):

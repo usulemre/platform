@@ -1,20 +1,22 @@
-# dependencies
-node_modules
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
 
-# builds
-.next
-out
-dist
-*.tsbuildinfo
-next-env.d.ts
+# uv / virtualenv (uv.lock IS committed for reproducibility — RP-1)
+.venv/
+.python-version
 
-# turbo
-.turbo
-
-# test / coverage
-coverage
-playwright-report
-test-results
+# tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # env / os
 .env*

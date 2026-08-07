@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from core_domain.shared import EntityId, DomainEvent
+from core_domain.shared import DomainEvent, EntityId
 
 
 @dataclass(frozen=True, slots=True)

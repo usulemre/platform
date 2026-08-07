@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Protocol
 
 from core_domain.risk import RiskLimit  # reuse the domain limit value object
-
 from core_domain.shared import EntityId
 
 
