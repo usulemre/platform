@@ -82,3 +82,6 @@ export {
 export { MARKET_BY_PROVIDER, REST_PATHS, DEFAULT_ENDPOINTS, type BinanceMarket } from './constants';
 export * from './types/canonical';
 export type * from './types/binance';
+
+// Phase 9.1.1 — Exchange Metadata & Symbol Registry (single source of truth for Binance symbols).
+export * from './metadata';

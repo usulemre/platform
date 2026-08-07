@@ -39,6 +39,27 @@ package behind the canonical contracts.
 - **Deterministic.** Transport, socket factory, clock and scheduler are all injected — the package
   opens no network and reads no wall-clock ambiently, so it is fully testable.
 
+## Exchange Metadata & Symbol Registry (`src/metadata`, Phase 9.1.1)
+
+The canonical metadata foundation and **single source of truth for Binance symbols**. It discovers,
+validates, caches and exposes exchange metadata, mapping every venue model into the canonical domain.
+It contains **no** market-data streams, **no** orders and **no** trading logic.
+
+| Component                                                                                                | Responsibility                                                   |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `ExchangeMetadataService`                                                                                | facade: discovery + validation + cache + derived registries      |
+| `MetadataRefresher`                                                                                      | fetch → validate → map → validate → store (TTL-aware)            |
+| `ExchangeMetadataMapper` (+ `ExchangeSymbolMapper`/`FilterMapper`/`PrecisionMapper`/`TradingRuleMapper`) | raw exchangeInfo → canonical `ExchangeMetadata`/`ExchangeSymbol` |
+| `SymbolRegistry` / `TradingPairRegistry` / `AssetRegistry` / `ExchangeCapabilityRegistry`                | immutable indexed read models                                    |
+| `MetadataValidator`                                                                                      | structural validation (raw + mapped)                             |
+| `ExchangeMetadataCache` / `ExchangeMetadataRepository`                                                   | TTL cache / per-market persistence port                          |
+
+Canonical models: `ExchangeMetadata`, `ExchangeSymbol`, `TradingPair`, `AssetMetadata`,
+`ExchangeFilter`, `TradingRule`, `PrecisionRule`, `RateLimitMetadata`, `ExchangeCapability`. All are
+immutable; the registries are thread-safe by immutability. Discovery runs through the injected
+metadata source (the REST client, backed by the Common HTTP Client). Reach it from the provider via
+`provider.metadataService(ctx)`.
+
 ## Composition
 
 `providerFactories` are the zero-argument factories the broker-gateway service merges into its

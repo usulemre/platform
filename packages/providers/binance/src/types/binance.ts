@@ -10,35 +10,60 @@ export interface BinanceServerTime {
   readonly serverTime: number;
 }
 
-/** A price/lot/notional filter entry from exchangeInfo. */
+/** A price/lot/notional filter entry from exchangeInfo (fields vary by `filterType`). */
 export interface BinanceSymbolFilter {
   readonly filterType: string;
   readonly tickSize?: string;
   readonly stepSize?: string;
+  readonly minPrice?: string;
+  readonly maxPrice?: string;
   readonly minQty?: string;
   readonly maxQty?: string;
   readonly minNotional?: string;
+  readonly maxNotional?: string;
   readonly notional?: string;
+  readonly limit?: number;
+  readonly maxNumOrders?: number;
+  readonly maxNumAlgoOrders?: number;
+  readonly multiplierUp?: string;
+  readonly multiplierDown?: string;
+  readonly avgPriceMins?: number;
 }
 
-/** A single instrument in `exchangeInfo`. */
+/** A single instrument in `exchangeInfo` (Spot & Futures share most fields). */
 export interface BinanceSymbolInfo {
   readonly symbol: string;
   readonly status: string;
   readonly baseAsset: string;
   readonly quoteAsset: string;
   readonly baseAssetPrecision?: number;
+  readonly quoteAssetPrecision?: number;
   readonly quotePrecision?: number;
   readonly quantityPrecision?: number;
   readonly pricePrecision?: number;
   readonly contractType?: string;
+  readonly orderTypes?: readonly string[];
+  readonly permissions?: readonly string[];
+  readonly permissionSets?: readonly (readonly string[])[];
+  readonly isSpotTradingAllowed?: boolean;
+  readonly isMarginTradingAllowed?: boolean;
   readonly filters?: readonly BinanceSymbolFilter[];
+}
+
+/** A rate-limit entry from exchangeInfo. */
+export interface BinanceRateLimit {
+  readonly rateLimitType: string;
+  readonly interval: string;
+  readonly intervalNum: number;
+  readonly limit: number;
 }
 
 /** `GET .../exchangeInfo`. */
 export interface BinanceExchangeInfo {
   readonly timezone?: string;
   readonly serverTime?: number;
+  readonly rateLimits?: readonly BinanceRateLimit[];
+  readonly exchangeFilters?: readonly BinanceSymbolFilter[];
   readonly symbols: readonly BinanceSymbolInfo[];
 }
 

@@ -51,6 +51,7 @@ import { BinanceMapper } from './mappers/mapper';
 import { BinanceServerTimeSync } from './time-sync';
 import { BinanceRestClient } from './http/rest-client';
 import { createResilientHttpClient, type ResilientHttpClient } from './http/resilience';
+import { ExchangeMetadataService } from './metadata/service';
 import { BinanceWebSocketClient } from './ws/websocket-client';
 import type {
   CanonicalOrder,
@@ -87,6 +88,7 @@ interface BrokerRuntime {
   readonly timeSync: BinanceServerTimeSync;
   readonly exchangeInfo: BinanceExchangeInfoCache;
   readonly health: BinanceHealthMonitor;
+  metadata?: ExchangeMetadataService;
   connected: boolean;
 }
 
@@ -367,6 +369,25 @@ export class BinanceProvider implements BrokerProviderPort {
     const runtime = this.runtime(ctx);
     await runtime.exchangeInfo.ensure(() => runtime.rest.exchangeInfo());
     return runtime.exchangeInfo.all().map((info) => this.mapper.symbols.toCanonical(info));
+  }
+
+  /**
+   * The Exchange Metadata & Symbol Registry for this broker binding — the canonical single source of
+   * truth for Binance symbols (Phase 9.1.1). Lazily created and memoized per broker runtime; backed by
+   * the same resilient REST client, so it discovers through the Common HTTP Client. Call
+   * `ensureFresh()`/`refresh()` on the returned service to populate it.
+   */
+  metadataService(ctx: CapabilityContext): ExchangeMetadataService {
+    const runtime = this.runtime(ctx);
+    if (!runtime.metadata) {
+      runtime.metadata = new ExchangeMetadataService({
+        market: runtime.config.market,
+        source: runtime.rest,
+        clock: this.clock,
+        ttlMs: runtime.config.exchangeInfoTtlMs,
+      });
+    }
+    return runtime.metadata;
   }
 
   /* ------------------------------ streaming & introspection ------------------------------ */
