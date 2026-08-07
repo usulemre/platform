@@ -55,6 +55,13 @@ import { createResilientHttpClient, type ResilientHttpClient } from './http/resi
 import { ExchangeMetadataService } from './metadata/service';
 import { BinanceMarketDataSocket } from './websocket/socket';
 import { BinanceAuthenticationService, BinanceAuthenticatedRestClient } from './auth';
+import {
+  BinanceOrderService,
+  BinanceRestOrderClient,
+  type CanonicalOrderResponse,
+  type OrderReference,
+  type ReplaceOrderRequest,
+} from './orders';
 import { BinanceWebSocketClient } from './ws/websocket-client';
 import type {
   CanonicalOrder,
@@ -94,6 +101,7 @@ interface BrokerRuntime {
   metadata?: ExchangeMetadataService;
   marketData?: BinanceMarketDataSocket;
   authService?: BinanceAuthenticationService;
+  orders?: BinanceOrderService;
   connected: boolean;
 }
 
@@ -279,45 +287,76 @@ export class BinanceProvider implements BrokerProviderPort {
 
   /* ------------------------------ trading (canonical surface) ------------------------------ */
 
+  /**
+   * The Binance Order Management API for this broker binding (Phase 9.1.5) — the canonical
+   * order-execution interface. Lazily created and memoized per broker runtime; it reuses the resilient
+   * REST client (via the order-client adapter), the exchange-info cache for symbol naming, and the
+   * metadata registry (when discovered) for trading-rule validation. Executes orders only — no trading
+   * strategy, portfolio or risk logic.
+   */
+  orderService(ctx: CapabilityContext): BinanceOrderService {
+    const runtime = this.runtime(ctx);
+    if (!runtime.orders) {
+      runtime.orders = new BinanceOrderService({
+        market: runtime.config.market,
+        client: new BinanceRestOrderClient(runtime.rest),
+        clock: this.clock,
+        symbolInfo: (venueSymbol) => runtime.exchangeInfo.get(venueSymbol),
+        exchangeSymbol: (symbol) =>
+          runtime.metadata?.metadata() ? runtime.metadata.symbols().get(symbol) : undefined,
+      });
+    }
+    return runtime.orders;
+  }
+
+  /** Create a canonical order; returns the full canonical order response (order + fills + commissions). */
+  createOrder(
+    ctx: CapabilityContext,
+    request: CanonicalOrderRequest,
+  ): Promise<CanonicalOrderResponse> {
+    return this.orderService(ctx).createOrder(request);
+  }
+
   /** Submit a canonical order; returns the canonical order as acknowledged by the venue. */
   async submitOrder(
     ctx: CapabilityContext,
     request: CanonicalOrderRequest,
   ): Promise<CanonicalOrder> {
-    const runtime = this.runtime(ctx);
-    return this.observe(runtime, async () => {
-      const params = this.mapper.orders.toBinanceParams(request);
-      const order = await runtime.rest.newOrder(params);
-      return this.mapper.orders.toCanonical(order, runtime.exchangeInfo.get(order.symbol));
-    });
+    return (await this.orderService(ctx).createOrder(request)).order;
   }
 
   /** Cancel a working order by venue order id or client order id. */
-  async cancelOrder(
+  cancelOrder(
     ctx: CapabilityContext,
     canonicalSymbol: string,
-    ref: { orderId?: number; clientOrderId?: string },
+    ref: OrderReference,
   ): Promise<CanonicalOrder> {
-    const runtime = this.runtime(ctx);
-    const binanceSymbol = this.mapper.symbols.toBinance(canonicalSymbol);
-    return this.observe(runtime, async () => {
-      const order = await runtime.rest.cancelOrder(binanceSymbol, ref);
-      return this.mapper.orders.toCanonical(order, runtime.exchangeInfo.get(order.symbol));
-    });
+    return this.orderService(ctx).cancelOrder(canonicalSymbol, ref);
+  }
+
+  /** Cancel all open orders on a symbol (Spot returns cancelled orders; Futures acknowledges). */
+  cancelAllOrders(
+    ctx: CapabilityContext,
+    canonicalSymbol: string,
+  ): Promise<readonly CanonicalOrder[]> {
+    return this.orderService(ctx).cancelAllOrders(canonicalSymbol);
+  }
+
+  /** Replace/modify a working order where officially supported (Spot cancelReplace / Futures modify). */
+  replaceOrder(
+    ctx: CapabilityContext,
+    request: ReplaceOrderRequest,
+  ): Promise<CanonicalOrderResponse> {
+    return this.orderService(ctx).replaceOrder(request);
   }
 
   /** Query a single order's current state. */
-  async getOrder(
+  getOrder(
     ctx: CapabilityContext,
     canonicalSymbol: string,
-    ref: { orderId?: number; clientOrderId?: string },
+    ref: OrderReference,
   ): Promise<CanonicalOrder> {
-    const runtime = this.runtime(ctx);
-    const binanceSymbol = this.mapper.symbols.toBinance(canonicalSymbol);
-    return this.observe(runtime, async () => {
-      const order = await runtime.rest.queryOrder(binanceSymbol, ref);
-      return this.mapper.orders.toCanonical(order, runtime.exchangeInfo.get(order.symbol));
-    });
+    return this.orderService(ctx).getOrder(canonicalSymbol, ref);
   }
 
   /** List canonical trades (fills) for a symbol. */

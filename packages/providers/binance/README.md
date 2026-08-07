@@ -105,6 +105,33 @@ Canonical events: `AccountUpdatedEvent`, `BalanceUpdatedEvent`, `PositionUpdated
 `AuthenticationStateChangedEvent` — all immutable. Reach it from the provider via
 `provider.authenticationService(ctx)`. Only officially-documented endpoints, payloads and events used.
 
+## Order Management API (`src/orders`, Phase 9.1.5)
+
+The canonical order-execution interface. It creates, queries, cancels and (where officially supported)
+replaces orders through documented Binance endpoints, and maps Binance orders / fills / commissions
+into the canonical order domain. It is reached only through the Broker Gateway provider boundary
+(`provider.orderService(ctx)` / `provider.createOrder` / `submitOrder` / `cancelOrder` / `getOrder` /
+`cancelAllOrders` / `replaceOrder`) and exposes **only** canonical models — no Binance order model
+leaves the provider. **No trading strategy, portfolio or risk logic.**
+
+| Component                                                                      | Responsibility                                                                                                                 |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `BinanceOrderService`                                                          | orchestration: validate → build → execute → parse → map, with metrics/health                                                   |
+| `BinanceOrderClient` (+ adapter over `BinanceRestClient`)                      | order REST port reusing the resilient client (no HTTP duplicated)                                                              |
+| `BinanceOrderRequestBuilder`                                                   | documented, market-aware param construction (Spot vs Futures order types, `quoteOrderQty`, `reduceOnly`, cancelReplace/modify) |
+| `BinanceOrderResponseParser` + `BinanceFillMapper` + `BinanceCommissionMapper` | raw response → order + fills + aggregated commissions                                                                          |
+| `BinanceOrderStatusMapper`                                                     | status mapping + documented lifecycle-transition validation                                                                    |
+| `BinanceOrderValidator`                                                        | request validation vs capabilities + instrument trading rules; response-shape validation                                       |
+| `BinanceOrderErrorMapper`                                                      | venue/transport failure → `CanonicalOrderError`                                                                                |
+| `BinanceOrderCapabilities`                                                     | per-market supported operations/types/TIF/features                                                                             |
+| `OrderMetrics` / `OrderHealthMonitor`                                          | operation counters / rolling error-rate health                                                                                 |
+
+Canonical models: `CanonicalOrder`, `CanonicalOrderRequest`, `CanonicalOrderResponse`, `CanonicalFill`,
+`CanonicalCommission`, `CanonicalOrderError` (+ the base status/type/side/TIF/execution vocabulary) —
+all immutable. Flow: **Trading Platform → Broker Gateway → BinanceProvider → BinanceOrderService →
+Common HTTP Client → Binance API.** Only officially-documented endpoints, params and enums used;
+Spot/Futures differences respected.
+
 ## Composition
 
 `providerFactories` are the zero-argument factories the broker-gateway service merges into its

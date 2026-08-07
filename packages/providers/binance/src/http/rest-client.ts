@@ -24,8 +24,10 @@ import { BinanceErrorMapper } from '../errors';
 import type { BinanceConfiguration } from '../config';
 import type {
   BinanceAccountInfo,
+  BinanceCancelReplaceResponse,
   BinanceDepth,
   BinanceExchangeInfo,
+  BinanceFuturesAck,
   BinanceFuturesBalance,
   BinanceKline,
   BinanceListenKey,
@@ -201,6 +203,20 @@ export class BinanceRestClient extends ProviderHttpClient {
     }
   }
 
+  private async signedPut<T>(path: string, params: Params = {}): Promise<T> {
+    try {
+      return this.unwrap(
+        await this.http.put<T>(
+          this.absolute(path, this.signedQuery(params)),
+          undefined,
+          this.options(true),
+        ),
+      );
+    } catch (error) {
+      throw this.errors.map(error);
+    }
+  }
+
   private async signedDelete<T>(path: string, params: Params = {}): Promise<T> {
     try {
       return this.unwrap(
@@ -284,6 +300,26 @@ export class BinanceRestClient extends ProviderHttpClient {
       orderId: ref.orderId,
       origClientOrderId: ref.clientOrderId,
     });
+  }
+
+  /**
+   * Cancel all open orders on a symbol. Spot (`DELETE /api/v3/openOrders`) returns the cancelled
+   * orders; Futures (`DELETE /fapi/v1/allOpenOrders`) returns a `{ code, msg }` acknowledgement.
+   */
+  cancelAllOrders<T = readonly BinanceOrder[] | BinanceFuturesAck>(
+    binanceSymbol: string,
+  ): Promise<T> {
+    return this.signedDelete<T>(this.path('cancelAllOrders'), { symbol: binanceSymbol });
+  }
+
+  /** Spot atomic cancel-and-replace (`POST /api/v3/order/cancelReplace`). */
+  cancelReplaceOrder(params: Params): Promise<BinanceCancelReplaceResponse> {
+    return this.signedPost<BinanceCancelReplaceResponse>(this.path('cancelReplace'), params);
+  }
+
+  /** Futures modify order (`PUT /fapi/v1/order`) — amend price/quantity of a working order. */
+  modifyOrder(params: Params): Promise<BinanceOrder> {
+    return this.signedPut<BinanceOrder>(this.path('order'), params);
   }
 
   /* ------------------------------ user data stream ------------------------------ */

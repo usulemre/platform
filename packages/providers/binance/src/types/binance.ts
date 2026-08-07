@@ -100,25 +100,56 @@ export interface BinancePositionRisk {
   readonly positionSide?: string;
 }
 
-/** An order object (spot & futures share most fields). */
+/** A single fill within a Spot order response (`fills[]`). */
+export interface BinanceFill {
+  readonly price: string;
+  readonly qty: string;
+  readonly commission: string;
+  readonly commissionAsset: string;
+  readonly tradeId?: number;
+}
+
+/** An order object (spot & futures share most fields; `fills` is Spot-only on create). */
 export interface BinanceOrder {
   readonly symbol: string;
   readonly orderId: number;
+  readonly orderListId?: number;
   readonly clientOrderId: string;
   readonly price: string;
   readonly origQty: string;
   readonly executedQty: string;
   readonly cummulativeQuoteQty?: string;
+  readonly cumQuote?: string;
   readonly avgPrice?: string;
   readonly status: string;
   readonly timeInForce?: string;
   readonly type: string;
+  readonly origType?: string;
   readonly side: string;
+  readonly positionSide?: string;
   readonly stopPrice?: string;
   readonly reduceOnly?: boolean;
+  readonly closePosition?: boolean;
+  readonly workingType?: string;
   readonly time?: number;
   readonly updateTime?: number;
   readonly transactTime?: number;
+  readonly workingTime?: number;
+  readonly fills?: readonly BinanceFill[];
+}
+
+/** The Spot `POST /api/v3/order/cancelReplace` response envelope. */
+export interface BinanceCancelReplaceResponse {
+  readonly cancelResult: string;
+  readonly newOrderResult: string;
+  readonly cancelResponse?: BinanceOrder | BinanceErrorBody;
+  readonly newOrderResponse?: BinanceOrder | BinanceErrorBody;
+}
+
+/** The Futures `DELETE /fapi/v1/allOpenOrders` acknowledgement. */
+export interface BinanceFuturesAck {
+  readonly code: number;
+  readonly msg: string;
 }
 
 /** A user trade line from `GET /api/v3/myTrades` or `/fapi/v1/userTrades`. */

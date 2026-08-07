@@ -90,3 +90,42 @@ export * from './websocket';
 
 // Phase 9.1.4 — Authentication & User Data Streams (authenticated communication layer).
 export * from './auth';
+
+// Phase 9.1.5 — Order Management API (canonical order-execution interface). Selective re-exports:
+// the reused BinanceOrderMapper/BinanceExecutionMapper and the base Canonical* order types are
+// already exported above (from ./mappers and ./types/canonical), so only the new surface is re-exported.
+export {
+  BinanceOrderService,
+  type BinanceOrderServiceDeps,
+  BinanceRestOrderClient,
+  type BinanceOrderClient,
+  type OrderRef,
+  type BinanceParamRecord,
+  BinanceOrderRequestBuilder,
+  type OrderReference,
+  type ReplaceOrderRequest,
+  BinanceOrderResponseParser,
+  BinanceOrderValidator,
+  BinanceOrderErrorMapper,
+  BinanceOrderStatusMapper,
+  BINANCE_ORDER_STATUSES,
+  BinanceFillMapper,
+  BinanceCommissionMapper,
+  BinanceOrderCapabilities,
+  type OrderOperation,
+  OrderMetrics,
+  OrderHealthMonitor,
+  type OrderMetricsSnapshot,
+  type OrderHealth,
+  type OrderHealthLevel,
+  type OrderOperationKind,
+  BinanceOrderValidationError,
+  BinanceOrderUnsupportedError,
+  BinanceOrderStateError,
+  type CanonicalFill,
+  type CanonicalCommission,
+  type CanonicalOrderResponse,
+  type CanonicalOrderError,
+  type CanonicalOrderErrorCategory,
+  type CanonicalOrderSide,
+} from './orders';

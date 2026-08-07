@@ -41,6 +41,8 @@ export interface CanonicalOrderRequest {
   readonly side: CanonicalSide;
   readonly type: CanonicalOrderType;
   readonly quantity: number;
+  /** Quote-asset amount to spend (venue-permitting: Spot MARKET orders only). */
+  readonly quoteQuantity?: number;
   readonly price?: number;
   readonly stopPrice?: number;
   readonly timeInForce?: CanonicalTimeInForce;
