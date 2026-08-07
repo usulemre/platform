@@ -85,3 +85,6 @@ export type * from './types/binance';
 
 // Phase 9.1.1 — Exchange Metadata & Symbol Registry (single source of truth for Binance symbols).
 export * from './metadata';
+
+// Phase 9.1.3 — WebSocket Market Data Streams (canonical real-time market-data provider).
+export * from './websocket';

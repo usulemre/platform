@@ -60,6 +60,27 @@ immutable; the registries are thread-safe by immutability. Discovery runs throug
 metadata source (the REST client, backed by the Common HTTP Client). Reach it from the provider via
 `provider.metadataService(ctx)`.
 
+## WebSocket Market Data Streams (`src/websocket`, Phase 9.1.3)
+
+The canonical real-time market-data provider. It subscribes to the officially-documented Binance
+market streams (Spot & USDⓈ-M Futures) and maps every event into the canonical domain. Market data
+**only** — no authenticated user streams, no orders, no account management.
+
+| Component                                                                                                                                                                        | Responsibility                                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `BinanceMarketDataSocket`                                                                                                                                                        | facade over the Common WebSocket Client (combined `/stream`, SUBSCRIBE/UNSUBSCRIBE, reconnect/resubscribe, liveness watchdog) |
+| `SubscriptionManager`                                                                                                                                                            | ref-counted stream fan-out over the shared client                                                                             |
+| `EventRouter` / `EventMapper` / `MarketDataValidator`                                                                                                                            | stream-name dispatch → validate → canonical event                                                                             |
+| `TradeStream` / `AggregateTradeStream` / `TickerStream` / `MiniTickerStream` / `BookTickerStream` / `KlineStream` / `AveragePriceStream` / `MarkPriceStream` / `OrderBookStream` | typed per-channel subscriptions                                                                                               |
+| `OrderBookSynchronizer` (+ `LocalOrderBook`, `SequenceValidator`, `GapDetector`)                                                                                                 | maintained local book per the official buffer→snapshot→apply procedure, with sequence validation & gap-triggered resync       |
+| `ChannelRegistry`                                                                                                                                                                | documented stream-name builders + market scoping + enum values                                                                |
+| `MarketDataMetrics` / `MarketDataHealthMonitor`                                                                                                                                  | per-stream counters / deterministic liveness health                                                                           |
+
+Canonical events: `MarketTradeEvent`, `AggregateTradeEvent`, `TickerEvent`, `BookTickerEvent`,
+`OrderBookSnapshot`, `OrderBookDelta`, `CandlestickEvent`, `AveragePriceEvent`, `MarkPriceEvent` — all
+immutable. Reach it from the provider via `provider.marketDataSocket(ctx)` (requires a socket factory).
+Only officially-documented stream names, payload fields and enum values are used.
+
 ## Composition
 
 `providerFactories` are the zero-argument factories the broker-gateway service merges into its

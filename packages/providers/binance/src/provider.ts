@@ -52,6 +52,7 @@ import { BinanceServerTimeSync } from './time-sync';
 import { BinanceRestClient } from './http/rest-client';
 import { createResilientHttpClient, type ResilientHttpClient } from './http/resilience';
 import { ExchangeMetadataService } from './metadata/service';
+import { BinanceMarketDataSocket } from './websocket/socket';
 import { BinanceWebSocketClient } from './ws/websocket-client';
 import type {
   CanonicalOrder,
@@ -89,6 +90,7 @@ interface BrokerRuntime {
   readonly exchangeInfo: BinanceExchangeInfoCache;
   readonly health: BinanceHealthMonitor;
   metadata?: ExchangeMetadataService;
+  marketData?: BinanceMarketDataSocket;
   connected: boolean;
 }
 
@@ -388,6 +390,43 @@ export class BinanceProvider implements BrokerProviderPort {
       });
     }
     return runtime.metadata;
+  }
+
+  /**
+   * The Binance WebSocket Market Data Streams for this broker binding (Phase 9.1.3) — the canonical
+   * real-time market-data provider. Lazily created and memoized per broker runtime; it uses the
+   * injected socket factory for transport, the resilient REST client as its order-book depth-snapshot
+   * source, and the exchange-info cache to canonicalize symbols. Requires a socket factory. Market data
+   * only — no user streams, orders or account data.
+   */
+  marketDataSocket(ctx: CapabilityContext): BinanceMarketDataSocket {
+    const runtime = this.runtime(ctx);
+    if (!this.deps.socketFactory)
+      throw new BinanceConfigurationError(
+        'No socket factory was injected; streaming is unavailable.',
+      );
+    if (!runtime.marketData) {
+      runtime.marketData = new BinanceMarketDataSocket({
+        market: runtime.config.market,
+        wsBaseUrl: runtime.config.wsBaseUrl,
+        factory: this.deps.socketFactory,
+        scheduler: this.deps.scheduler,
+        random: this.deps.random,
+        clock: this.clock,
+        resolver: {
+          toCanonical: (venueSymbol) => {
+            const info = runtime.exchangeInfo.get(venueSymbol);
+            return info
+              ? `${info.baseAsset.toUpperCase()}-${info.quoteAsset.toUpperCase()}`
+              : venueSymbol.toUpperCase();
+          },
+        },
+        depthSource: {
+          depth: (venueSymbol, limit) => runtime.rest.orderBook(venueSymbol, limit),
+        },
+      });
+    }
+    return runtime.marketData;
   }
 
   /* ------------------------------ streaming & introspection ------------------------------ */
