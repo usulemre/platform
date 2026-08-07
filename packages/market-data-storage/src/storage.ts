@@ -27,6 +27,11 @@ import { StorageMetrics, type StorageMetricsSnapshot } from './metrics/storage-m
 import { StoragePartitionManager } from './partition';
 import { MarketDataQueryRepository, type ReconstructedOrderBook } from './query/query-repository';
 import {
+  MarketDataQueryEngine,
+  type MarketDataQueryEngineOptions,
+} from './query/market-data-query-engine';
+import type { StorageAvailabilityProbe } from './query/query-health';
+import {
   AggregateTradeRepository,
   AveragePriceRepository,
   BookTickerRepository,
@@ -59,6 +64,19 @@ export interface MarketDataStorageOptions {
   readonly batch?: Partial<MarketDataBatchWriterConfig>;
   readonly deadLetterCapacity?: number;
   readonly healthThresholds?: Partial<StorageHealthThresholds>;
+  /** Tune the canonical Query Engine (limits, slow-query threshold). */
+  readonly queryEngine?: Pick<
+    MarketDataQueryEngineOptions,
+    'defaultLimit' | 'maxLimit' | 'slowQueryThresholdMs'
+  >;
+}
+
+/** A storage engine that can report live liveness (the ClickHouse engine does). */
+function asAvailabilityProbe(engine: StorageEngine): StorageAvailabilityProbe | undefined {
+  const candidate = engine as Partial<StorageAvailabilityProbe>;
+  return typeof candidate.ping === 'function'
+    ? { ping: () => (candidate.ping as StorageAvailabilityProbe['ping'])() }
+    : undefined;
 }
 
 export class MarketDataStorage implements CanonicalMarketDataStore {
@@ -70,6 +88,7 @@ export class MarketDataStorage implements CanonicalMarketDataStore {
   private readonly writer: MarketDataWriter;
   private readonly batchWriter: MarketDataBatchWriter;
   private readonly queryRepository: MarketDataQueryRepository;
+  private readonly queryEngine: MarketDataQueryEngine;
   private readonly retentionManager: StorageRetentionManager;
   private readonly healthMonitor: StorageHealthMonitor;
 
@@ -102,6 +121,13 @@ export class MarketDataStorage implements CanonicalMarketDataStore {
       metrics: this.metrics,
       clock: this.clock,
       partitionManager: this.partitionManager,
+    });
+    const probe = asAvailabilityProbe(this.engine);
+    this.queryEngine = new MarketDataQueryEngine({
+      repository: this.queryRepository,
+      clock: this.clock,
+      ...(probe ? { availabilityProbe: probe } : {}),
+      ...(options.queryEngine ?? {}),
     });
     this.retentionManager = new StorageRetentionManager(
       this.engine,
@@ -157,6 +183,16 @@ export class MarketDataStorage implements CanonicalMarketDataStore {
   /** The canonical query repository (time-range/instrument/latest/historical/reconstruction). */
   get queries(): MarketDataQueryRepository {
     return this.queryRepository;
+  }
+
+  /**
+   * The canonical **Market Data Query Engine** — the read/query abstraction consumers (Dataset /
+   * Research / Feature / Factor / Backtesting / Python Quant Runtime) use for validated, paginated,
+   * provider- and storage-independent access. It adds query validation, keyset pagination, sequence
+   * filtering, canonical error mapping, query metrics, and storage-backed health over {@link queries}.
+   */
+  get engineQueries(): MarketDataQueryEngine {
+    return this.queryEngine;
   }
 
   /** Reconstruct an instrument's order book at a point in time (default: latest). */

@@ -35,6 +35,15 @@ export * from './write/market-data-writer';
 export * from './query/query-repository';
 export * from './query/repositories';
 
+// Canonical Market Data Query Engine (Phase 10.3) — the read/query abstraction for consumers
+export * from './query/query-spec';
+export * from './query/query-cursor';
+export * from './query/query-errors';
+export * from './query/query-validator';
+export * from './query/query-metrics';
+export * from './query/query-health';
+export * from './query/market-data-query-engine';
+
 // Lifecycle & observability
 export * from './retention/retention-manager';
 export * from './metrics/storage-metrics';

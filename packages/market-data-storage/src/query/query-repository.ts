@@ -15,9 +15,10 @@ import type {
   NormalizedOrderBookSnapshot,
   OrderBookLevel,
 } from '@platform/market-data-ingestion';
-import { LocalOrderBook } from '@platform/market-data-ingestion';
+import { LocalOrderBook, MARKET_DATA_TYPE_BY_KIND } from '@platform/market-data-ingestion';
 import type { MarketDataType } from '@platform/market-data-sdk';
 import type { StorageEngine, StoredEntry } from '../engine/storage-engine';
+import { parsePartitionKey } from '../partition';
 import type { StorageMetrics } from '../metrics/storage-metrics';
 import { StoragePartitionManager, utcDate, type PartitionFilter } from '../partition';
 
@@ -66,10 +67,8 @@ export class MarketDataQueryRepository {
   /** Run a canonical query. Results are time-ordered (ascending by default). */
   async query(criteria: MarketDataQuery): Promise<readonly NormalizedMarketDataRecord[]> {
     const start = this.deps.clock?.now();
-    const entries = await this.read(criteria);
-    let records = entries
-      .map((entry) => entry.record)
-      .filter((record) => matches(record, criteria));
+    const selected = await this.selectEntries(criteria);
+    let records = selected.map((entry) => entry.record);
     if (criteria.order === 'desc') records = records.reverse();
     if (criteria.limit !== undefined && criteria.limit >= 0) {
       records = records.slice(0, criteria.limit);
@@ -80,18 +79,55 @@ export class MarketDataQueryRepository {
     return records;
   }
 
+  /**
+   * The pruned, criteria-matched, deterministically ordered {@link StoredEntry}s for a query — the
+   * shared read primitive the {@link MarketDataQuery Engine} builds pagination, cursoring, and
+   * sequence filtering on. Entries are ascending by `(primaryTime, ingestSequence)` (the engine's
+   * canonical order), carry their identity and storage metadata, and are NOT limited here — callers
+   * apply their own bound. Order (`asc`/`desc`) and `limit` on the criteria are intentionally ignored;
+   * this returns the ascending superset so a caller can page or reverse deterministically.
+   */
+  async selectEntries(criteria: MarketDataQuery): Promise<readonly StoredEntry[]> {
+    const entries = await this.read(criteria);
+    return entries.filter((entry) => matches(entry.record, criteria));
+  }
+
+  /**
+   * The single most recent {@link StoredEntry} for an instrument (optionally of one kind), read
+   * efficiently: partitions are date-descending and read newest-first, stopping at the first partition
+   * that yields a match — so a latest-value query never scans the whole history when recent data
+   * exists. Returns `null` when the instrument (of that kind) has no stored data.
+   */
+  async latestEntry(instrumentId: string, kind?: MarketDataEventKind): Promise<StoredEntry | null> {
+    const filter: PartitionFilter = kind
+      ? { instrumentIds: [instrumentId], marketDataType: MARKET_DATA_TYPE_BY_KIND[kind] }
+      : { instrumentIds: [instrumentId] };
+    const selected = this.partitions.select(this.deps.engine.listPartitions(), filter);
+    // Read newest calendar day first; stop as soon as a partition yields a matching entry.
+    const byDateDesc = [...selected].sort((a, b) =>
+      partitionDate(b).localeCompare(partitionDate(a)),
+    );
+    for (const partition of byDateDesc) {
+      const entries = await this.deps.engine.read([partition]);
+      const matching = kind ? entries.filter((e) => e.record.kind === kind) : entries;
+      // `read` returns ascending by (primaryTime, ingestSequence); the last match is the newest.
+      const newest = matching[matching.length - 1];
+      if (newest) return newest;
+    }
+    return null;
+  }
+
   /** The most recent record for an instrument (optionally of one kind). */
   async latest(
     instrumentId: string,
     kind?: MarketDataEventKind,
   ): Promise<NormalizedMarketDataRecord | null> {
-    const records = await this.query({
-      instrumentId,
-      ...(kind ? { kind } : {}),
-      order: 'desc',
-      limit: 1,
-    });
-    return records[0] ?? null;
+    const start = this.deps.clock?.now();
+    const entry = await this.latestEntry(instrumentId, kind);
+    if (start !== undefined && this.deps.clock && this.deps.metrics) {
+      this.deps.metrics.onQuery(this.deps.clock.now() - start);
+    }
+    return entry?.record ?? null;
   }
 
   /** All records for an instrument+kind within an inclusive primary-time range (ascending). */
@@ -167,6 +203,11 @@ export class MarketDataQueryRepository {
     const selected = this.partitions.select(this.deps.engine.listPartitions(), filter);
     return this.deps.engine.read(selected);
   }
+}
+
+/** The UTC-date component of a partition handle (empty string if unparseable — sorts first). */
+function partitionDate(partition: string): string {
+  return parsePartitionKey(partition)?.date ?? '';
 }
 
 function toPartitionFilter(criteria: MarketDataQuery): PartitionFilter {
