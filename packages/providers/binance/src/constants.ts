@@ -60,6 +60,14 @@ export const REST_PATHS = {
     cancelAllOrders: '/fapi/v1/allOpenOrders',
     userTrades: '/fapi/v1/userTrades',
     listenKey: '/fapi/v1/listenKey',
+    // USDⓈ-M Futures-only endpoints (Phase 9.1.7).
+    leverage: '/fapi/v1/leverage',
+    marginType: '/fapi/v1/marginType',
+    positionMargin: '/fapi/v1/positionMargin',
+    positionSideDual: '/fapi/v1/positionSide/dual',
+    premiumIndex: '/fapi/v1/premiumIndex',
+    fundingRate: '/fapi/v1/fundingRate',
+    leverageBracket: '/fapi/v1/leverageBracket',
   },
 } as const;
 

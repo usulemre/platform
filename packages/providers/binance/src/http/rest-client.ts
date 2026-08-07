@@ -25,14 +25,22 @@ import type { BinanceConfiguration } from '../config';
 import type {
   BinanceAccountInfo,
   BinanceCancelReplaceResponse,
+  BinanceCodeMsg,
   BinanceDepth,
   BinanceExchangeInfo,
+  BinanceFundingRate,
+  BinanceFuturesAccountInfo,
   BinanceFuturesAck,
   BinanceFuturesBalance,
   BinanceKline,
+  BinanceLeverageBracket,
+  BinanceLeverageResponse,
   BinanceListenKey,
   BinanceOrder,
+  BinancePositionMarginResponse,
   BinancePositionRisk,
+  BinancePositionSideDual,
+  BinancePremiumIndex,
   BinanceServerTime,
   BinanceSpotBalance,
   BinanceUserTrade,
@@ -176,6 +184,16 @@ export class BinanceRestClient extends ProviderHttpClient {
     });
   }
 
+  private async publicGet<T>(path: string, query?: string, weight?: number): Promise<T> {
+    try {
+      return this.unwrap(
+        await this.http.get<T>(this.absolute(path, query), this.options(false, weight)),
+      );
+    } catch (error) {
+      throw this.errors.map(error);
+    }
+  }
+
   private async signedGet<T>(path: string, params: Params = {}, weight?: number): Promise<T> {
     try {
       return this.unwrap(
@@ -252,6 +270,70 @@ export class BinanceRestClient extends ProviderHttpClient {
       this.path('positionRisk'),
       binanceSymbol ? { symbol: binanceSymbol } : {},
       5,
+    );
+  }
+
+  /* ------------------------------ USDⓈ-M Futures-only (signed) — Phase 9.1.7 ------------------------------ */
+
+  /** Full USDⓈ-M Futures account document (`GET /fapi/v2/account`). */
+  futuresAccount(): Promise<BinanceFuturesAccountInfo> {
+    return this.signedGet<BinanceFuturesAccountInfo>(this.path('account'), {}, 5);
+  }
+
+  /** Change initial leverage on a symbol (`POST /fapi/v1/leverage`). */
+  setLeverage(binanceSymbol: string, leverage: number): Promise<BinanceLeverageResponse> {
+    return this.signedPost<BinanceLeverageResponse>(this.path('leverage'), {
+      symbol: binanceSymbol,
+      leverage,
+    });
+  }
+
+  /** Change margin type ISOLATED/CROSSED on a symbol (`POST /fapi/v1/marginType`). */
+  setMarginType(binanceSymbol: string, marginType: string): Promise<BinanceCodeMsg> {
+    return this.signedPost<BinanceCodeMsg>(this.path('marginType'), {
+      symbol: binanceSymbol,
+      marginType,
+    });
+  }
+
+  /** Modify isolated position margin (`POST /fapi/v1/positionMargin`; type 1 = add, 2 = reduce). */
+  modifyPositionMargin(params: Params): Promise<BinancePositionMarginResponse> {
+    return this.signedPost<BinancePositionMarginResponse>(this.path('positionMargin'), params);
+  }
+
+  /** Read the account's position mode (`GET /fapi/v1/positionSide/dual`). */
+  positionModeDual(): Promise<BinancePositionSideDual> {
+    return this.signedGet<BinancePositionSideDual>(this.path('positionSideDual'), {}, 30);
+  }
+
+  /** Change the account's position mode (`POST /fapi/v1/positionSide/dual`). */
+  setPositionMode(dualSidePosition: boolean): Promise<BinanceCodeMsg> {
+    return this.signedPost<BinanceCodeMsg>(this.path('positionSideDual'), { dualSidePosition });
+  }
+
+  /** Mark price & funding data (`GET /fapi/v1/premiumIndex`; public). */
+  premiumIndex(
+    binanceSymbol?: string,
+  ): Promise<BinancePremiumIndex | readonly BinancePremiumIndex[]> {
+    const query = binanceSymbol ? encodeParams({ symbol: binanceSymbol }) : undefined;
+    return this.publicGet<BinancePremiumIndex | readonly BinancePremiumIndex[]>(
+      this.path('premiumIndex'),
+      query,
+    );
+  }
+
+  /** Funding-rate history (`GET /fapi/v1/fundingRate`; public). */
+  fundingRateHistory(binanceSymbol?: string, limit = 100): Promise<readonly BinanceFundingRate[]> {
+    const query = encodeParams(binanceSymbol ? { symbol: binanceSymbol, limit } : { limit });
+    return this.publicGet<readonly BinanceFundingRate[]>(this.path('fundingRate'), query);
+  }
+
+  /** Notional & leverage brackets (`GET /fapi/v1/leverageBracket`; signed). */
+  leverageBracket(binanceSymbol?: string): Promise<readonly BinanceLeverageBracket[]> {
+    return this.signedGet<readonly BinanceLeverageBracket[]>(
+      this.path('leverageBracket'),
+      binanceSymbol ? { symbol: binanceSymbol } : {},
+      1,
     );
   }
 

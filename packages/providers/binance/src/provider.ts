@@ -74,6 +74,7 @@ import {
   type AccountEventSource,
 } from './account';
 import { BinanceWebSocketClient } from './ws/websocket-client';
+import { BinanceFuturesClient, BinanceFuturesRestClient } from './futures';
 import type {
   CanonicalOrder,
   CanonicalOrderRequest,
@@ -114,6 +115,7 @@ interface BrokerRuntime {
   authService?: BinanceAuthenticationService;
   orders?: BinanceOrderService;
   accountSync?: BinanceAccountSynchronizer;
+  futures?: BinanceFuturesClient;
   connected: boolean;
 }
 
@@ -565,6 +567,46 @@ export class BinanceProvider implements BrokerProviderPort {
       });
     }
     return runtime.accountSync;
+  }
+
+  /**
+   * The Binance USDⓈ-M Futures Trading integration for this broker binding (Phase 9.1.7) — the canonical
+   * Futures execution capability. Lazily created and memoized per broker runtime; it composes the
+   * Futures services (orders, positions & risk configuration, account, balances, derivatives metadata)
+   * over the resilient signed REST client (via {@link BinanceFuturesRestClient}) and, when a socket
+   * factory is injected, the Futures user-data WebSocket client. Available only on the Futures market;
+   * it exposes ONLY canonical models and runs no trading strategy, portfolio or risk logic.
+   */
+  futuresService(ctx: CapabilityContext): BinanceFuturesClient {
+    const runtime = this.runtime(ctx);
+    if (runtime.config.market !== 'FUTURES')
+      throw new BinanceConfigurationError(
+        `Futures trading is unavailable on the Binance ${runtime.config.market} market ` +
+          `(broker "${runtime.config.brokerId}"); use the "binance-futures" provider.`,
+      );
+    if (!runtime.futures) {
+      const resolver = {
+        toCanonical: (venueSymbol: string): string => {
+          const info = runtime.exchangeInfo.get(venueSymbol);
+          return info
+            ? `${info.baseAsset.toUpperCase()}-${info.quoteAsset.toUpperCase()}`
+            : venueSymbol.toUpperCase();
+        },
+      };
+      runtime.futures = new BinanceFuturesClient({
+        rest: new BinanceFuturesRestClient(runtime.rest),
+        resolver,
+        symbolInfo: (venueSymbol) => runtime.exchangeInfo.get(venueSymbol),
+        exchangeSymbol: (symbol) =>
+          runtime.metadata?.metadata() ? runtime.metadata.symbols().get(symbol) : undefined,
+        clock: this.clock,
+        wsBaseUrl: runtime.config.wsBaseUrl,
+        socketFactory: this.deps.socketFactory,
+        scheduler: this.deps.scheduler,
+        random: this.deps.random,
+      });
+    }
+    return runtime.futures;
   }
 
   /* ------------------------------ streaming & introspection ------------------------------ */

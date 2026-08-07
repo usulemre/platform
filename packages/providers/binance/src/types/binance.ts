@@ -102,6 +102,134 @@ export interface BinancePositionRisk {
   readonly unRealizedProfit?: string;
   readonly leverage?: string;
   readonly positionSide?: string;
+  readonly liquidationPrice?: string;
+  readonly marginType?: string;
+  readonly isolatedMargin?: string;
+  readonly isolatedWallet?: string;
+  readonly notional?: string;
+  readonly maxNotionalValue?: string;
+  readonly isAutoAddMargin?: string;
+  readonly updateTime?: number;
+}
+
+/* ---------------------------- USDⓈ-M Futures-only REST payloads (Phase 9.1.7) ---------------------------- */
+
+/** An asset line within `GET /fapi/v2/account`. */
+export interface BinanceFuturesAccountAsset {
+  readonly asset: string;
+  readonly walletBalance: string;
+  readonly unrealizedProfit?: string;
+  readonly marginBalance?: string;
+  readonly maintMargin?: string;
+  readonly initialMargin?: string;
+  readonly positionInitialMargin?: string;
+  readonly openOrderInitialMargin?: string;
+  readonly crossWalletBalance?: string;
+  readonly crossUnPnl?: string;
+  readonly availableBalance?: string;
+  readonly maxWithdrawAmount?: string;
+  readonly marginAvailable?: boolean;
+  readonly updateTime?: number;
+}
+
+/** A position line within `GET /fapi/v2/account`. */
+export interface BinanceFuturesAccountPosition {
+  readonly symbol: string;
+  readonly positionSide?: string;
+  readonly positionAmt: string;
+  readonly entryPrice?: string;
+  readonly markPrice?: string;
+  readonly unrealizedProfit?: string;
+  readonly leverage?: string;
+  readonly isolated?: boolean;
+  readonly initialMargin?: string;
+  readonly maintMargin?: string;
+  readonly positionInitialMargin?: string;
+  readonly openOrderInitialMargin?: string;
+  readonly isolatedWallet?: string;
+  readonly maxNotional?: string;
+  readonly notional?: string;
+  readonly updateTime?: number;
+}
+
+/** `GET /fapi/v2/account` — the full USDⓈ-M Futures account document. */
+export interface BinanceFuturesAccountInfo {
+  readonly feeTier?: number;
+  readonly canTrade?: boolean;
+  readonly canDeposit?: boolean;
+  readonly canWithdraw?: boolean;
+  readonly updateTime?: number;
+  readonly totalWalletBalance?: string;
+  readonly totalUnrealizedProfit?: string;
+  readonly totalMarginBalance?: string;
+  readonly totalInitialMargin?: string;
+  readonly totalMaintMargin?: string;
+  readonly availableBalance?: string;
+  readonly maxWithdrawAmount?: string;
+  readonly assets: readonly BinanceFuturesAccountAsset[];
+  readonly positions: readonly BinanceFuturesAccountPosition[];
+}
+
+/** `POST /fapi/v1/leverage` — leverage change acknowledgement. */
+export interface BinanceLeverageResponse {
+  readonly leverage: number;
+  readonly maxNotionalValue: string;
+  readonly symbol: string;
+}
+
+/** `POST /fapi/v1/marginType` / `POST /fapi/v1/positionSide/dual` — a `{ code, msg }` acknowledgement. */
+export interface BinanceCodeMsg {
+  readonly code: number;
+  readonly msg: string;
+}
+
+/** `POST /fapi/v1/positionMargin` — isolated position-margin change acknowledgement. */
+export interface BinancePositionMarginResponse {
+  readonly amount: number;
+  readonly code: number;
+  readonly msg: string;
+  readonly type: number;
+}
+
+/** `GET /fapi/v1/positionSide/dual` — the account's position mode. */
+export interface BinancePositionSideDual {
+  readonly dualSidePosition: boolean;
+}
+
+/** `GET /fapi/v1/premiumIndex` — mark price, index price and current funding data. */
+export interface BinancePremiumIndex {
+  readonly symbol: string;
+  readonly markPrice: string;
+  readonly indexPrice?: string;
+  readonly estimatedSettlePrice?: string;
+  readonly lastFundingRate?: string;
+  readonly interestRate?: string;
+  readonly nextFundingTime?: number;
+  readonly time?: number;
+}
+
+/** `GET /fapi/v1/fundingRate` — a historical funding-rate row. */
+export interface BinanceFundingRate {
+  readonly symbol: string;
+  readonly fundingRate: string;
+  readonly fundingTime: number;
+  readonly markPrice?: string;
+}
+
+/** A single notional/leverage bracket within `GET /fapi/v1/leverageBracket`. */
+export interface BinanceLeverageBracketEntry {
+  readonly bracket: number;
+  readonly initialLeverage: number;
+  readonly notionalCap: number;
+  readonly notionalFloor: number;
+  readonly maintMarginRatio: number;
+  readonly cum?: number;
+}
+
+/** `GET /fapi/v1/leverageBracket` — a symbol's notional/leverage brackets. */
+export interface BinanceLeverageBracket {
+  readonly symbol: string;
+  readonly brackets: readonly BinanceLeverageBracketEntry[];
 }
 
 /** A single fill within a Spot order response (`fills[]`). */
