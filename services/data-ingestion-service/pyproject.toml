@@ -1,0 +1,17 @@
+# data-ingestion-service — the deterministic raw-vault -> canonical bitemporal data path.
+# Transforms raw records already landed in the raw vault (DATA-10) into certified, provenance-bearing
+# canonical records readable through the As-Of Gateway (DI-1, PIT-1). It contains NO vendor/connector
+# adapter (that boundary is upstream); raw records are supplied. Deterministic; no wall-clock/IO.
+[project]
+name = "data-ingestion-service"
+version = "0.1.0"
+description = "Deterministic market-data ingestion: raw vault -> normalize -> quality/quarantine -> canonical bitemporal dataset."
+requires-python = ">=3.12"
+dependencies = ["core-domain", "platform-storage"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/data_ingestion_service"]

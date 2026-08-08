@@ -12,6 +12,7 @@ members = [
     "backtesting-service",
     "core-domain",
     "data-connectors",
+    "data-ingestion-service",
     "dataset-service",
     "event-bus",
     "execution-service",
@@ -164,6 +165,21 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "platform-contracts", editable = "packages/contracts" }]
+
+[[package]]
+name = "data-ingestion-service"
+version = "0.1.0"
+source = { editable = "services/data-ingestion-service" }
+dependencies = [
+    { name = "core-domain" },
+    { name = "platform-storage" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "core-domain", editable = "packages/core-domain" },
+    { name = "platform-storage", editable = "packages/storage" },
+]
 
 [[package]]
 name = "dataset-service"

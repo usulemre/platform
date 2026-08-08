@@ -65,6 +65,7 @@ admin-api = { workspace = true }
 backtesting-service = { workspace = true }
 core-domain = { workspace = true }
 data-connectors = { workspace = true }
+data-ingestion-service = { workspace = true }
 dataset-service = { workspace = true }
 event-bus = { workspace = true }
 execution-service = { workspace = true }
